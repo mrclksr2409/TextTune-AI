@@ -136,11 +136,13 @@
             }
         }
 
+        // Magic wand SVG as data URI for TinyMCE.
+        var wandIcon = 'data:image/svg+xml;base64,' + btoa('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20"><path fill="#555d66" d="M7.5 5.6L10 7 8.6 4.5 10 2 7.5 3.4 5 2l1.4 2.5L5 7zm12 9.8L17 14l1.4 2.5L17 19l2.5-1.4L22 19l-1.4-2.5L22 14zM22 2l-2.5 1.4L17 2l1.4 2.5L17 7l2.5-1.4L22 7l-1.4-2.5zm-7.63 5.29a.9959.9959 0 0 0-1.41 0L1.29 18.96c-.39.39-.39 1.02 0 1.41l2.34 2.34c.39.39 1.02.39 1.41 0L16.71 11.04c.39-.39.39-1.02 0-1.41l-2.34-2.34zM5.71 21.29L2.71 18.29 9 12l3 3-6.29 6.29z"/></svg>');
+
         // Register a split button with dropdown menu.
         editor.addButton('texttune_ai_menu', {
             title: 'TextTune AI',
-            image: 'dashicons-admin-customizer',
-            icon: 'dashicon dashicons-admin-customizer',
+            image: wandIcon,
             type: 'menubutton',
             menu: [
                 {
