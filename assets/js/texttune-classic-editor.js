@@ -139,7 +139,8 @@
         // Register a split button with dropdown menu.
         editor.addButton('texttune_ai_menu', {
             title: 'TextTune AI',
-            icon: 'dashicon dashicons-admin-generic',
+            image: 'dashicons-admin-customizer',
+            icon: 'dashicon dashicons-admin-customizer',
             type: 'menubutton',
             menu: [
                 {
