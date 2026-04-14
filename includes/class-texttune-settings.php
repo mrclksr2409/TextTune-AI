@@ -134,6 +134,10 @@ class TextTune_Settings {
      * @return array The sanitized settings.
      */
     public function sanitize_settings( $input ) {
+        if ( ! is_array( $input ) ) {
+            $input = array();
+        }
+
         $sanitized = array();
 
         // Provider.
@@ -177,9 +181,10 @@ class TextTune_Settings {
         }
 
         $allowed_tabs = array( 'settings', 'prompts' );
-        $active_tab   = isset( $_GET['tab'] ) && in_array( $_GET['tab'], $allowed_tabs, true )
-            ? sanitize_key( wp_unslash( $_GET['tab'] ) )
-            : 'settings';
+        // Force scalar handling — if $_GET['tab'] arrives as an array, PHP 8 would
+        // throw a TypeError inside wp_unslash()/sanitize_key(). Cast to string first.
+        $raw_tab    = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( (string) $_GET['tab'] ) ) : '';
+        $active_tab = in_array( $raw_tab, $allowed_tabs, true ) ? $raw_tab : 'settings';
 
         $settings_url = admin_url( 'options-general.php?page=texttune-ai&tab=settings' );
         $prompts_url  = admin_url( 'options-general.php?page=texttune-ai&tab=prompts' );
