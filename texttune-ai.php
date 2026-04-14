@@ -24,13 +24,27 @@ define( 'TEXTTUNE_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'TEXTTUNE_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'TEXTTUNE_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
 
-// Include classes.
-require_once TEXTTUNE_PLUGIN_DIR . 'includes/class-texttune-encryption.php';
-require_once TEXTTUNE_PLUGIN_DIR . 'includes/class-texttune-activator.php';
-require_once TEXTTUNE_PLUGIN_DIR . 'includes/class-texttune-settings.php';
-require_once TEXTTUNE_PLUGIN_DIR . 'includes/class-texttune-openai.php';
-require_once TEXTTUNE_PLUGIN_DIR . 'includes/class-texttune-anthropic.php';
-require_once TEXTTUNE_PLUGIN_DIR . 'includes/class-texttune-rest-api.php';
+// Include classes — wrapped so a missing/broken include surfaces in the error log
+// instead of a bare fatal without context.
+try {
+    require_once TEXTTUNE_PLUGIN_DIR . 'includes/class-texttune-encryption.php';
+    require_once TEXTTUNE_PLUGIN_DIR . 'includes/class-texttune-activator.php';
+    require_once TEXTTUNE_PLUGIN_DIR . 'includes/class-texttune-settings.php';
+    require_once TEXTTUNE_PLUGIN_DIR . 'includes/class-texttune-openai.php';
+    require_once TEXTTUNE_PLUGIN_DIR . 'includes/class-texttune-anthropic.php';
+    require_once TEXTTUNE_PLUGIN_DIR . 'includes/class-texttune-rest-api.php';
+} catch ( \Throwable $e ) {
+    error_log(
+        sprintf(
+            'TEXTTUNE-AI LOAD ERROR: %s in %s:%d',
+            $e->getMessage(),
+            $e->getFile(),
+            $e->getLine()
+        )
+    );
+    // Re-throw so WordPress still shows the activation-failed screen.
+    throw $e;
+}
 
 // Activation hook.
 register_activation_hook( __FILE__, array( 'TextTune_Activator', 'activate' ) );
@@ -39,14 +53,31 @@ register_activation_hook( __FILE__, array( 'TextTune_Activator', 'activate' ) );
  * Initialize the plugin.
  */
 function texttune_ai_init() {
-    // Load text domain.
-    load_plugin_textdomain( 'texttune-ai', false, dirname( TEXTTUNE_PLUGIN_BASENAME ) . '/languages' );
+    try {
+        // Load text domain.
+        load_plugin_textdomain( 'texttune-ai', false, dirname( TEXTTUNE_PLUGIN_BASENAME ) . '/languages' );
 
-    // Initialize settings page.
-    new TextTune_Settings();
+        // Initialize settings page.
+        new TextTune_Settings();
 
-    // Initialize REST API.
-    new TextTune_REST_API();
+        // Initialize REST API.
+        new TextTune_REST_API();
+    } catch ( \Throwable $e ) {
+        error_log(
+            sprintf(
+                'TEXTTUNE-AI INIT ERROR: %s in %s:%d',
+                $e->getMessage(),
+                $e->getFile(),
+                $e->getLine()
+            )
+        );
+        // During activation we want WordPress to detect the fatal, so re-throw.
+        // On normal requests re-throwing would take down the whole site, so only
+        // re-throw while the plugin is being activated.
+        if ( defined( 'WP_SANDBOX_SCRAPING' ) && WP_SANDBOX_SCRAPING ) {
+            throw $e;
+        }
+    }
 }
 add_action( 'plugins_loaded', 'texttune_ai_init' );
 
