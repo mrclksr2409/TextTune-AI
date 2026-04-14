@@ -24,6 +24,13 @@ define( 'TEXTTUNE_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'TEXTTUNE_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'TEXTTUNE_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
 
+// Load Plugin Update Checker (bundled in lib/).
+$texttune_puc_path = TEXTTUNE_PLUGIN_DIR . 'lib/plugin-update-checker/plugin-update-checker.php';
+if ( file_exists( $texttune_puc_path ) ) {
+    require_once $texttune_puc_path;
+}
+unset( $texttune_puc_path );
+
 // Include classes — wrapped so a missing/broken include surfaces in the error log
 // instead of a bare fatal without context.
 try {
@@ -62,6 +69,20 @@ function texttune_ai_init() {
 
         // Initialize REST API.
         new TextTune_REST_API();
+
+        // Initialize Plugin Update Checker for GitHub-based updates.
+        if ( class_exists( \YahnisElsts\PluginUpdateChecker\v5\PucFactory::class ) ) {
+            $update_checker = \YahnisElsts\PluginUpdateChecker\v5\PucFactory::buildUpdateChecker(
+                'https://github.com/mrclksr2409/TextTune-AI/',
+                __FILE__,
+                'texttune-ai'
+            );
+            // Prefer attached release asset zip over auto-generated source zip.
+            $source = $update_checker->getVcsSource();
+            if ( $source ) {
+                $source->enableReleaseAssets();
+            }
+        }
     } catch ( \Throwable $e ) {
         error_log(
             sprintf(
