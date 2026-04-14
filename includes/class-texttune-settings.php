@@ -71,19 +71,19 @@ class TextTune_Settings {
             )
         );
 
-        // Provider section.
+        // Provider section (Settings tab).
         add_settings_section(
             'texttune_provider_section',
             __( 'KI-Provider', 'texttune-ai' ),
             array( $this, 'render_provider_section' ),
-            'texttune-ai'
+            'texttune-ai-settings'
         );
 
         add_settings_field(
             'texttune_provider',
             __( 'Provider', 'texttune-ai' ),
             array( $this, 'render_provider_field' ),
-            'texttune-ai',
+            'texttune-ai-settings',
             'texttune_provider_section'
         );
 
@@ -91,7 +91,7 @@ class TextTune_Settings {
             'texttune_api_key',
             __( 'API-Schlüssel', 'texttune-ai' ),
             array( $this, 'render_api_key_field' ),
-            'texttune-ai',
+            'texttune-ai-settings',
             'texttune_provider_section'
         );
 
@@ -99,16 +99,16 @@ class TextTune_Settings {
             'texttune_model',
             __( 'Modell', 'texttune-ai' ),
             array( $this, 'render_model_field' ),
-            'texttune-ai',
+            'texttune-ai-settings',
             'texttune_provider_section'
         );
 
-        // Prompts section.
+        // Prompts section (Prompts tab).
         add_settings_section(
             'texttune_prompts_section',
             __( 'Prompts pro Inhaltstyp', 'texttune-ai' ),
             array( $this, 'render_prompts_section' ),
-            'texttune-ai'
+            'texttune-ai-prompts'
         );
 
         $post_types = get_post_types( array( 'public' => true ), 'objects' );
@@ -120,7 +120,7 @@ class TextTune_Settings {
                 'texttune_prompt_' . $post_type->name,
                 sprintf( __( 'Prompt für „%s"', 'texttune-ai' ), $post_type->label ),
                 array( $this, 'render_prompt_field' ),
-                'texttune-ai',
+                'texttune-ai-prompts',
                 'texttune_prompts_section',
                 array( 'post_type' => $post_type->name )
             );
@@ -175,15 +175,43 @@ class TextTune_Settings {
         if ( ! current_user_can( 'manage_options' ) ) {
             return;
         }
+
+        $allowed_tabs = array( 'settings', 'prompts' );
+        $active_tab   = isset( $_GET['tab'] ) && in_array( $_GET['tab'], $allowed_tabs, true )
+            ? sanitize_key( wp_unslash( $_GET['tab'] ) )
+            : 'settings';
+
+        $settings_url = admin_url( 'options-general.php?page=texttune-ai&tab=settings' );
+        $prompts_url  = admin_url( 'options-general.php?page=texttune-ai&tab=prompts' );
+        $referer_url  = admin_url( 'options-general.php?page=texttune-ai&tab=' . $active_tab );
         ?>
         <div class="wrap texttune-settings">
             <h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
+
+            <nav class="nav-tab-wrapper" aria-label="<?php esc_attr_e( 'TextTune AI Tabs', 'texttune-ai' ); ?>">
+                <a href="<?php echo esc_url( $settings_url ); ?>"
+                   class="nav-tab<?php echo ( 'settings' === $active_tab ) ? ' nav-tab-active' : ''; ?>">
+                    <?php esc_html_e( 'Einstellungen', 'texttune-ai' ); ?>
+                </a>
+                <a href="<?php echo esc_url( $prompts_url ); ?>"
+                   class="nav-tab<?php echo ( 'prompts' === $active_tab ) ? ' nav-tab-active' : ''; ?>">
+                    <?php esc_html_e( 'Prompts', 'texttune-ai' ); ?>
+                </a>
+            </nav>
+
             <form action="options.php" method="post">
-                <?php
-                settings_fields( 'texttune_ai_options' );
-                do_settings_sections( 'texttune-ai' );
-                submit_button( __( 'Einstellungen speichern', 'texttune-ai' ) );
-                ?>
+                <?php settings_fields( 'texttune_ai_options' ); ?>
+                <input type="hidden" name="_wp_http_referer" value="<?php echo esc_attr( $referer_url ); ?>" />
+
+                <div class="texttune-tab-panel" id="texttune-tab-settings"<?php echo ( 'settings' === $active_tab ) ? '' : ' hidden'; ?>>
+                    <?php do_settings_sections( 'texttune-ai-settings' ); ?>
+                </div>
+
+                <div class="texttune-tab-panel" id="texttune-tab-prompts"<?php echo ( 'prompts' === $active_tab ) ? '' : ' hidden'; ?>>
+                    <?php do_settings_sections( 'texttune-ai-prompts' ); ?>
+                </div>
+
+                <?php submit_button( __( 'Einstellungen speichern', 'texttune-ai' ) ); ?>
             </form>
         </div>
         <?php

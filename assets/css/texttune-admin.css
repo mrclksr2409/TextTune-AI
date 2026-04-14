@@ -18,3 +18,11 @@
 .texttune-settings .texttune-model-select {
     min-width: 200px;
 }
+
+.texttune-settings .texttune-tab-panel {
+    padding-top: 10px;
+}
+
+.texttune-settings .texttune-tab-panel[hidden] {
+    display: none;
+}
