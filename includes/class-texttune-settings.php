@@ -125,6 +125,46 @@ class TextTune_Settings {
                 array( 'post_type' => $post_type->name )
             );
         }
+
+        // Vision section (Bilderkennung tab).
+        add_settings_section(
+            'texttune_vision_section',
+            __( 'Bilderkennung für die Mediathek', 'texttune-ai' ),
+            array( $this, 'render_vision_section' ),
+            'texttune-ai-vision'
+        );
+
+        add_settings_field(
+            'texttune_vision_prompt',
+            __( 'Prompt-Vorlage', 'texttune-ai' ),
+            array( $this, 'render_vision_prompt_field' ),
+            'texttune-ai-vision',
+            'texttune_vision_section'
+        );
+
+        add_settings_field(
+            'texttune_vision_enabled_fields',
+            __( 'Aktivierte Felder', 'texttune-ai' ),
+            array( $this, 'render_vision_fields_field' ),
+            'texttune-ai-vision',
+            'texttune_vision_section'
+        );
+
+        add_settings_field(
+            'texttune_vision_model',
+            __( 'Modell-Override', 'texttune-ai' ),
+            array( $this, 'render_vision_model_field' ),
+            'texttune-ai-vision',
+            'texttune_vision_section'
+        );
+
+        add_settings_field(
+            'texttune_vision_max_edge',
+            __( 'Max. Bildkante (px)', 'texttune-ai' ),
+            array( $this, 'render_vision_max_edge_field' ),
+            'texttune-ai-vision',
+            'texttune_vision_section'
+        );
     }
 
     /**
@@ -169,6 +209,46 @@ class TextTune_Settings {
             }
         }
 
+        // Vision settings.
+        $allowed_fields         = array( 'alt', 'title', 'caption', 'description' );
+        $existing_vision        = isset( $current_settings['vision'] ) && is_array( $current_settings['vision'] )
+            ? $current_settings['vision']
+            : array();
+        $vision_input           = isset( $input['vision'] ) && is_array( $input['vision'] ) ? $input['vision'] : array();
+        $sanitized['vision']    = array();
+
+        $sanitized['vision']['prompt'] = isset( $vision_input['prompt'] ) && '' !== trim( (string) $vision_input['prompt'] )
+            ? sanitize_textarea_field( $vision_input['prompt'] )
+            : ( isset( $existing_vision['prompt'] ) ? $existing_vision['prompt'] : TextTune_Activator::DEFAULT_VISION_PROMPT );
+
+        $enabled_fields = array();
+        if ( isset( $vision_input['enabled_fields'] ) && is_array( $vision_input['enabled_fields'] ) ) {
+            foreach ( $vision_input['enabled_fields'] as $field ) {
+                $field = sanitize_key( $field );
+                if ( in_array( $field, $allowed_fields, true ) ) {
+                    $enabled_fields[] = $field;
+                }
+            }
+        }
+        $sanitized['vision']['enabled_fields'] = array_values( array_unique( $enabled_fields ) );
+
+        $vision_model_input = isset( $vision_input['model'] ) ? (string) $vision_input['model'] : '';
+        if ( '' === $vision_model_input ) {
+            $sanitized['vision']['model'] = '';
+        } elseif ( in_array( $vision_model_input, $valid_models, true ) ) {
+            $sanitized['vision']['model'] = $vision_model_input;
+        } else {
+            $sanitized['vision']['model'] = '';
+        }
+
+        $max_edge = isset( $vision_input['max_edge'] ) ? absint( $vision_input['max_edge'] ) : 1568;
+        if ( $max_edge < 512 ) {
+            $max_edge = 512;
+        } elseif ( $max_edge > 4096 ) {
+            $max_edge = 4096;
+        }
+        $sanitized['vision']['max_edge'] = $max_edge;
+
         return $sanitized;
     }
 
@@ -180,7 +260,7 @@ class TextTune_Settings {
             return;
         }
 
-        $allowed_tabs = array( 'settings', 'prompts' );
+        $allowed_tabs = array( 'settings', 'prompts', 'vision' );
         // Force scalar handling — if $_GET['tab'] arrives as an array, PHP 8 would
         // throw a TypeError inside wp_unslash()/sanitize_key(). Cast to string first.
         $raw_tab    = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( (string) $_GET['tab'] ) ) : '';
@@ -188,6 +268,7 @@ class TextTune_Settings {
 
         $settings_url = admin_url( 'options-general.php?page=texttune-ai&tab=settings' );
         $prompts_url  = admin_url( 'options-general.php?page=texttune-ai&tab=prompts' );
+        $vision_url   = admin_url( 'options-general.php?page=texttune-ai&tab=vision' );
         $referer_url  = admin_url( 'options-general.php?page=texttune-ai&tab=' . $active_tab );
         ?>
         <div class="wrap texttune-settings">
@@ -202,6 +283,10 @@ class TextTune_Settings {
                    class="nav-tab<?php echo ( 'prompts' === $active_tab ) ? ' nav-tab-active' : ''; ?>">
                     <?php esc_html_e( 'Prompts', 'texttune-ai' ); ?>
                 </a>
+                <a href="<?php echo esc_url( $vision_url ); ?>"
+                   class="nav-tab<?php echo ( 'vision' === $active_tab ) ? ' nav-tab-active' : ''; ?>">
+                    <?php esc_html_e( 'Bilderkennung', 'texttune-ai' ); ?>
+                </a>
             </nav>
 
             <form action="options.php" method="post">
@@ -214,6 +299,10 @@ class TextTune_Settings {
 
                 <div class="texttune-tab-panel" id="texttune-tab-prompts"<?php echo ( 'prompts' === $active_tab ) ? '' : ' hidden'; ?>>
                     <?php do_settings_sections( 'texttune-ai-prompts' ); ?>
+                </div>
+
+                <div class="texttune-tab-panel" id="texttune-tab-vision"<?php echo ( 'vision' === $active_tab ) ? '' : ' hidden'; ?>>
+                    <?php do_settings_sections( 'texttune-ai-vision' ); ?>
                 </div>
 
                 <?php submit_button( __( 'Einstellungen speichern', 'texttune-ai' ) ); ?>
@@ -345,6 +434,135 @@ class TextTune_Settings {
             class="large-text"
             placeholder="<?php echo esc_attr( TextTune_Activator::DEFAULT_PROMPT ); ?>"
         ><?php echo esc_textarea( $value ); ?></textarea>
+        <?php
+    }
+
+    /**
+     * Render vision section description.
+     */
+    public function render_vision_section() {
+        echo '<p>' . esc_html__( 'Konfiguriere die Bilderkennung für die Mediathek. Der Button „Bild analysieren" erscheint dann in den Attachment-Details und als Bulk-Aktion.', 'texttune-ai' ) . '</p>';
+    }
+
+    /**
+     * Render the vision prompt textarea.
+     */
+    public function render_vision_prompt_field() {
+        $settings = get_option( 'texttune_ai_settings', array() );
+        $vision   = isset( $settings['vision'] ) && is_array( $settings['vision'] ) ? $settings['vision'] : array();
+        $value    = isset( $vision['prompt'] ) ? $vision['prompt'] : TextTune_Activator::DEFAULT_VISION_PROMPT;
+        ?>
+        <textarea
+            name="texttune_ai_settings[vision][prompt]"
+            rows="10"
+            class="large-text code"
+            placeholder="<?php echo esc_attr( TextTune_Activator::DEFAULT_VISION_PROMPT ); ?>"
+        ><?php echo esc_textarea( $value ); ?></textarea>
+        <p class="description">
+            <?php
+            echo wp_kses(
+                __( 'Platzhalter: <code>{language}</code>, <code>{locale}</code>, <code>{filename}</code>, <code>{fields}</code>. Die Antwort muss ein reines JSON-Objekt mit den Schlüsseln <code>alt</code>, <code>title</code>, <code>caption</code>, <code>description</code> sein.', 'texttune-ai' ),
+                array( 'code' => array() )
+            );
+            ?>
+        </p>
+        <?php
+    }
+
+    /**
+     * Render the enabled-fields checkboxes.
+     */
+    public function render_vision_fields_field() {
+        $settings = get_option( 'texttune_ai_settings', array() );
+        $vision   = isset( $settings['vision'] ) && is_array( $settings['vision'] ) ? $settings['vision'] : array();
+        $enabled  = isset( $vision['enabled_fields'] ) && is_array( $vision['enabled_fields'] )
+            ? $vision['enabled_fields']
+            : array( 'alt', 'title', 'caption', 'description' );
+
+        $fields = array(
+            'alt'         => __( 'Alt-Text', 'texttune-ai' ),
+            'title'       => __( 'Titel', 'texttune-ai' ),
+            'caption'     => __( 'Beschriftung', 'texttune-ai' ),
+            'description' => __( 'Beschreibung', 'texttune-ai' ),
+        );
+
+        foreach ( $fields as $key => $label ) {
+            $checked = in_array( $key, $enabled, true );
+            ?>
+            <label style="display:block; margin-bottom:4px;">
+                <input
+                    type="checkbox"
+                    name="texttune_ai_settings[vision][enabled_fields][]"
+                    value="<?php echo esc_attr( $key ); ?>"
+                    <?php checked( $checked ); ?>
+                />
+                <?php echo esc_html( $label ); ?>
+            </label>
+            <?php
+        }
+        ?>
+        <p class="description">
+            <?php esc_html_e( 'Nur ausgewählte Felder werden vom Button vorgeschlagen und gespeichert.', 'texttune-ai' ); ?>
+        </p>
+        <?php
+    }
+
+    /**
+     * Render vision model override dropdown per provider.
+     */
+    public function render_vision_model_field() {
+        $settings = get_option( 'texttune_ai_settings', array() );
+        $vision   = isset( $settings['vision'] ) && is_array( $settings['vision'] ) ? $settings['vision'] : array();
+        $current  = isset( $vision['model'] ) ? $vision['model'] : '';
+
+        foreach ( $this->providers as $provider_key => $provider ) {
+            ?>
+            <select
+                name="texttune_ai_settings[vision][model]"
+                class="texttune-vision-model-select"
+                data-provider="<?php echo esc_attr( $provider_key ); ?>"
+            >
+                <option value="" <?php selected( $current, '' ); ?>>
+                    <?php esc_html_e( '— Gleiches Modell wie Textoptimierung —', 'texttune-ai' ); ?>
+                </option>
+                <?php foreach ( $provider['models'] as $model_key => $model_label ) : ?>
+                    <option
+                        value="<?php echo esc_attr( $model_key ); ?>"
+                        <?php selected( $current, $model_key ); ?>
+                    >
+                        <?php echo esc_html( $model_label ); ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+            <?php
+        }
+        ?>
+        <p class="description">
+            <?php esc_html_e( 'Alle unterstützten Modelle sind vision-fähig. Leer lassen, um dasselbe Modell wie für die Textoptimierung zu nutzen.', 'texttune-ai' ); ?>
+        </p>
+        <?php
+    }
+
+    /**
+     * Render the max-edge number input.
+     */
+    public function render_vision_max_edge_field() {
+        $settings = get_option( 'texttune_ai_settings', array() );
+        $vision   = isset( $settings['vision'] ) && is_array( $settings['vision'] ) ? $settings['vision'] : array();
+        $value    = isset( $vision['max_edge'] ) ? (int) $vision['max_edge'] : 1568;
+        ?>
+        <input
+            type="number"
+            name="texttune_ai_settings[vision][max_edge]"
+            value="<?php echo esc_attr( $value ); ?>"
+            min="512"
+            max="4096"
+            step="1"
+            class="small-text"
+        /> px
+        <p class="description">
+            <?php esc_html_e( 'Längere Kante, bevor das Bild zum Versand an die KI verkleinert wird. 1568 px ist ein guter Kompromiss. Das Original bleibt unverändert.', 'texttune-ai' ); ?>
+        </p>
         <?php
     }
 

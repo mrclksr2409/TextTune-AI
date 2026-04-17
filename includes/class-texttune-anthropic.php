@@ -110,4 +110,100 @@ class TextTune_Anthropic {
 
         return trim( $data['content'][0]['text'] );
     }
+
+    /**
+     * Analyze an image and return raw model output (expected JSON string).
+     *
+     * @param string $image_b64 Base64-encoded image bytes (no data: prefix).
+     * @param string $mime      MIME type (e.g. image/jpeg).
+     * @param string $prompt    System instruction.
+     * @param string $model     Model identifier.
+     * @return string|WP_Error  Raw response text or WP_Error.
+     */
+    public function analyze_image( $image_b64, $mime, $prompt, $model ) {
+        $body = array(
+            'model'      => $model,
+            'max_tokens' => 2048,
+            'system'     => $prompt,
+            'messages'   => array(
+                array(
+                    'role'    => 'user',
+                    'content' => array(
+                        array(
+                            'type'   => 'image',
+                            'source' => array(
+                                'type'       => 'base64',
+                                'media_type' => $mime,
+                                'data'       => $image_b64,
+                            ),
+                        ),
+                        array(
+                            'type' => 'text',
+                            'text' => __( 'Analysiere dieses Bild gemäß der Anweisungen im System-Prompt. Antworte mit einem einzigen JSON-Objekt.', 'texttune-ai' ),
+                        ),
+                    ),
+                ),
+            ),
+        );
+
+        $response = wp_remote_post(
+            $this->api_url,
+            array(
+                'timeout' => 120,
+                'headers' => array(
+                    'x-api-key'         => $this->api_key,
+                    'anthropic-version' => '2023-06-01',
+                    'content-type'      => 'application/json',
+                ),
+                'body'    => wp_json_encode( $body ),
+            )
+        );
+
+        if ( is_wp_error( $response ) ) {
+            return new WP_Error(
+                'texttune_anthropic_request_failed',
+                sprintf(
+                    /* translators: %s: Error message */
+                    __( 'Anthropic Anfrage fehlgeschlagen: %s', 'texttune-ai' ),
+                    $response->get_error_message()
+                )
+            );
+        }
+
+        $status_code = wp_remote_retrieve_response_code( $response );
+        $body_raw    = wp_remote_retrieve_body( $response );
+        $data        = json_decode( $body_raw, true );
+
+        if ( 429 === (int) $status_code ) {
+            return new WP_Error(
+                'texttune_vision_rate_limited',
+                __( 'Anthropic Rate-Limit erreicht. Bitte später erneut versuchen.', 'texttune-ai' )
+            );
+        }
+
+        if ( $status_code < 200 || $status_code >= 300 ) {
+            $error_message = isset( $data['error']['message'] )
+                ? $data['error']['message']
+                : __( 'Unbekannter API-Fehler', 'texttune-ai' );
+
+            return new WP_Error(
+                'texttune_anthropic_api_error',
+                sprintf(
+                    /* translators: 1: HTTP status code, 2: Error message */
+                    __( 'Anthropic API Fehler (%1$d): %2$s', 'texttune-ai' ),
+                    $status_code,
+                    $error_message
+                )
+            );
+        }
+
+        if ( ! isset( $data['content'][0]['text'] ) ) {
+            return new WP_Error(
+                'texttune_anthropic_invalid_response',
+                __( 'Unerwartete Antwort von Anthropic. Bitte versuche es erneut.', 'texttune-ai' )
+            );
+        }
+
+        return trim( $data['content'][0]['text'] );
+    }
 }

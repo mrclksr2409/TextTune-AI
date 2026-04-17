@@ -19,6 +19,12 @@ class TextTune_Activator {
     const DEFAULT_PROMPT = 'Optimiere den folgenden Text. Verbessere Grammatik, Stil und Lesbarkeit. Behalte den Inhalt, die Bedeutung und die HTML-Formatierung bei. Gib nur den optimierten Text zurück, ohne zusätzliche Erklärungen.';
 
     /**
+     * Default prompt for image analysis (vision).
+     * Supports placeholders: {language}, {locale}, {filename}, {fields}.
+     */
+    const DEFAULT_VISION_PROMPT = "Du bist ein Bildanalyse-Assistent für eine WordPress-Mediathek. Analysiere das bereitgestellte Bild und erzeuge Metadaten in der Sprache: {language}.\n\nDateiname (nur als Kontext, ignoriere generische Kamera-Namen wie IMG_1234):\n{filename}\n\nGib ausschließlich ein einzelnes JSON-Objekt mit genau diesen vier Schlüsseln zurück:\n- \"alt\":         kurzer beschreibender Alt-Text (max. 125 Zeichen, kein \"Bild von ...\")\n- \"title\":       prägnanter Titel (max. 60 Zeichen)\n- \"caption\":     ein Satz als Bildunterschrift\n- \"description\": 2-4 Sätze ausführliche Beschreibung\n\nKeine Einleitung, kein Markdown, keine Code-Fences. Nur das JSON-Objekt.";
+
+    /**
      * Run on plugin activation.
      */
     public static function activate() {
@@ -54,8 +60,26 @@ class TextTune_Activator {
                         'post' => self::DEFAULT_PROMPT,
                         'page' => self::DEFAULT_PROMPT,
                     ),
+                    'vision'   => array(
+                        'prompt'         => self::DEFAULT_VISION_PROMPT,
+                        'enabled_fields' => array( 'alt', 'title', 'caption', 'description' ),
+                        'model'          => '',
+                        'max_edge'       => 1568,
+                    ),
                 );
                 add_option( 'texttune_ai_settings', $defaults );
+            } else {
+                // Backfill vision defaults on upgrade.
+                $existing = get_option( 'texttune_ai_settings', array() );
+                if ( is_array( $existing ) && empty( $existing['vision'] ) ) {
+                    $existing['vision'] = array(
+                        'prompt'         => self::DEFAULT_VISION_PROMPT,
+                        'enabled_fields' => array( 'alt', 'title', 'caption', 'description' ),
+                        'model'          => '',
+                        'max_edge'       => 1568,
+                    );
+                    update_option( 'texttune_ai_settings', $existing );
+                }
             }
         } catch ( \Throwable $e ) {
             // Log the actual error so the user can diagnose it from debug.log.

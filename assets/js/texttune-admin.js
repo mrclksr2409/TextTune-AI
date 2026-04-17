@@ -9,27 +9,32 @@
     document.addEventListener('DOMContentLoaded', function () {
         var radios = document.querySelectorAll('.texttune-provider-radio');
         var modelSelects = document.querySelectorAll('.texttune-model-select');
+        var visionModelSelects = document.querySelectorAll('.texttune-vision-model-select');
         var toggleBtn = document.getElementById('texttune-toggle-key');
         var apiKeyInput = document.getElementById('texttune-api-key');
 
+        function syncSelectsForProvider(selects, provider, nameWhenActive) {
+            selects.forEach(function (select) {
+                if (select.getAttribute('data-provider') === provider) {
+                    select.style.display = '';
+                    select.name = nameWhenActive;
+                } else {
+                    select.style.display = 'none';
+                    select.name = '';
+                }
+            });
+        }
+
         /**
-         * Show only the model dropdown matching the selected provider.
+         * Show only the model dropdowns matching the selected provider.
          */
         function updateModelVisibility() {
             var selected = document.querySelector('.texttune-provider-radio:checked');
             if (!selected) return;
 
             var provider = selected.value;
-
-            modelSelects.forEach(function (select) {
-                if (select.getAttribute('data-provider') === provider) {
-                    select.style.display = '';
-                    select.name = 'texttune_ai_settings[model]';
-                } else {
-                    select.style.display = 'none';
-                    select.name = '';
-                }
-            });
+            syncSelectsForProvider(modelSelects, provider, 'texttune_ai_settings[model]');
+            syncSelectsForProvider(visionModelSelects, provider, 'texttune_ai_settings[vision][model]');
         }
 
         // Listen for provider changes.
