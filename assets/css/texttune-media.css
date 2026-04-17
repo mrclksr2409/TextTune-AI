@@ -1,0 +1,123 @@
+/**
+ * TextTune AI — Media library integration styles.
+ */
+
+.texttune-analyze-status {
+    font-style: italic;
+    color: #555;
+}
+.texttune-analyze-status.is-error {
+    color: #b32d2e;
+    font-style: normal;
+}
+.texttune-analyze-status.is-success {
+    color: #1b7f37;
+    font-style: normal;
+}
+
+.texttune-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 160001; /* Above WP media modal (160000). */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.texttune-modal {
+    background: #fff;
+    border-radius: 4px;
+    max-width: 900px;
+    width: 100%;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+.texttune-modal-header {
+    padding: 12px 20px;
+    border-bottom: 1px solid #dcdcde;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+.texttune-modal-header h2 {
+    margin: 0;
+    font-size: 16px;
+}
+.texttune-modal-close {
+    background: none;
+    border: 0;
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+    color: #50575e;
+    padding: 4px 8px;
+}
+.texttune-modal-close:hover {
+    color: #000;
+}
+
+.texttune-modal-body {
+    padding: 16px 20px;
+    overflow: auto;
+}
+
+.texttune-modal-footer {
+    padding: 12px 20px;
+    border-top: 1px solid #dcdcde;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.texttune-modal-all-actions {
+    margin-bottom: 10px;
+    display: flex;
+    gap: 8px;
+}
+
+.texttune-modal-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 8px;
+}
+.texttune-modal-table th,
+.texttune-modal-table td {
+    text-align: left;
+    padding: 8px 10px;
+    vertical-align: top;
+    border-bottom: 1px solid #dcdcde;
+}
+.texttune-modal-table .texttune-cell-current,
+.texttune-modal-table .texttune-cell-generated {
+    max-width: 320px;
+    word-break: break-word;
+}
+.texttune-modal-table .texttune-cell-current em {
+    color: #8c8f94;
+}
+.texttune-modal-table .texttune-cell-action {
+    white-space: nowrap;
+}
+
+.texttune-modal-error {
+    margin-bottom: 10px;
+}
+
+.texttune-progress {
+    width: 100%;
+    height: 8px;
+    background: #f0f0f1;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 6px;
+}
+.texttune-progress-bar {
+    height: 100%;
+    background: #2271b1;
+    transition: width 0.2s ease;
+}

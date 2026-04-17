@@ -40,6 +40,9 @@ try {
     require_once TEXTTUNE_PLUGIN_DIR . 'includes/class-texttune-openai.php';
     require_once TEXTTUNE_PLUGIN_DIR . 'includes/class-texttune-anthropic.php';
     require_once TEXTTUNE_PLUGIN_DIR . 'includes/class-texttune-rest-api.php';
+    require_once TEXTTUNE_PLUGIN_DIR . 'includes/class-texttune-image-analyzer.php';
+    require_once TEXTTUNE_PLUGIN_DIR . 'includes/class-texttune-rest-api-vision.php';
+    require_once TEXTTUNE_PLUGIN_DIR . 'includes/class-texttune-media-integration.php';
 } catch ( \Throwable $e ) {
     error_log(
         sprintf(
@@ -69,6 +72,10 @@ function texttune_ai_init() {
 
         // Initialize REST API.
         new TextTune_REST_API();
+
+        // Initialize Vision REST API + media library integration.
+        new TextTune_REST_API_Vision();
+        new TextTune_Media_Integration();
 
         // Initialize Plugin Update Checker for GitHub-based updates.
         if ( class_exists( \YahnisElsts\PluginUpdateChecker\v5\PucFactory::class ) ) {
