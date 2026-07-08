@@ -37,13 +37,89 @@ class TextTune_Settings {
     );
 
     /**
+     * Per-request memo of resolved model lists, keyed by provider.
+     *
+     * @var array
+     */
+    private $models_cache = array();
+
+    /**
      * Constructor.
      */
     public function __construct() {
         add_action( 'admin_menu', array( $this, 'add_options_page' ) );
         add_action( 'admin_init', array( $this, 'register_settings' ) );
+        add_action( 'admin_init', array( $this, 'maybe_handle_refresh_models' ) );
         add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_assets' ) );
         add_action( 'admin_notices', array( $this, 'show_admin_notices' ) );
+    }
+
+    /**
+     * Get the model list for a provider — dynamically fetched from the
+     * provider API when possible, otherwise the hardcoded fallback.
+     *
+     * Only one API key is stored (belonging to the saved provider), so the
+     * dynamic list is only available for that provider.
+     *
+     * @param string $provider_key Provider key ('openai' or 'anthropic').
+     * @return array Map of model id => label.
+     */
+    private function get_provider_models( $provider_key ) {
+        if ( isset( $this->models_cache[ $provider_key ] ) ) {
+            return $this->models_cache[ $provider_key ];
+        }
+
+        $fallback = $this->providers[ $provider_key ]['models'];
+
+        $settings       = get_option( 'texttune_ai_settings', array() );
+        $saved_provider = isset( $settings['provider'] ) ? $settings['provider'] : 'openai';
+
+        if ( $provider_key !== $saved_provider || empty( $settings['api_key'] ) ) {
+            $this->models_cache[ $provider_key ] = $fallback;
+            return $fallback;
+        }
+
+        $api_key = TextTune_Encryption::decrypt( $settings['api_key'] );
+        if ( '' === (string) $api_key ) {
+            $this->models_cache[ $provider_key ] = $fallback;
+            return $fallback;
+        }
+
+        $models = TextTune_Models::get_models( $provider_key, $api_key );
+        if ( is_wp_error( $models ) || empty( $models ) ) {
+            $models = $fallback;
+        }
+
+        $this->models_cache[ $provider_key ] = $models;
+        return $models;
+    }
+
+    /**
+     * Handle the "refresh models" link: flush the model cache and redirect
+     * back to the settings page so the reload re-fetches from the API.
+     */
+    public function maybe_handle_refresh_models() {
+        if ( ! isset( $_GET['texttune-refresh-models'] ) ) {
+            return;
+        }
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return;
+        }
+        check_admin_referer( 'texttune_refresh_models' );
+
+        TextTune_Models::flush_cache();
+
+        wp_safe_redirect(
+            add_query_arg(
+                array(
+                    'page'             => 'texttune-ai',
+                    'tab'              => 'settings',
+                    'models-refreshed' => '1',
+                ),
+                admin_url( 'options-general.php' )
+            )
+        );
+        exit;
     }
 
     /**
@@ -195,9 +271,26 @@ class TextTune_Settings {
             $sanitized['api_key'] = isset( $current_settings['api_key'] ) ? $current_settings['api_key'] : '';
         }
 
-        // Model — validate against allowed models for the selected provider.
-        $valid_models        = array_keys( $this->providers[ $sanitized['provider'] ]['models'] );
-        $sanitized['model']  = isset( $input['model'] ) && in_array( $input['model'], $valid_models, true )
+        // Model — validate against the dynamic list (re-fetched if the cache
+        // expired), unioned with the hardcoded fallback and the previously
+        // saved values, so an API outage at save time never resets a
+        // legitimately saved model. Dynamic keys come first so the reset
+        // target ($valid_models[0]) is a current model.
+        $valid_models = array_values(
+            array_unique(
+                array_merge(
+                    array_keys( $this->get_provider_models( $sanitized['provider'] ) ),
+                    array_keys( $this->providers[ $sanitized['provider'] ]['models'] ),
+                    array_filter(
+                        array(
+                            isset( $current_settings['model'] ) ? (string) $current_settings['model'] : '',
+                            isset( $current_settings['vision']['model'] ) ? (string) $current_settings['vision']['model'] : '',
+                        )
+                    )
+                )
+            )
+        );
+        $sanitized['model'] = isset( $input['model'] ) && in_array( $input['model'], $valid_models, true )
             ? $input['model']
             : $valid_models[0];
 
@@ -248,6 +341,15 @@ class TextTune_Settings {
             $max_edge = 4096;
         }
         $sanitized['vision']['max_edge'] = $max_edge;
+
+        // A new key or a provider switch invalidates the cached model list;
+        // flushing after validation is fine — the just-rendered form was
+        // built from the old list, the next page load fetches with the new
+        // credentials.
+        $provider_changed = isset( $current_settings['provider'] ) && $current_settings['provider'] !== $sanitized['provider'];
+        if ( ! empty( $input['api_key'] ) || $provider_changed ) {
+            TextTune_Models::flush_cache();
+        }
 
         return $sanitized;
     }
@@ -388,17 +490,28 @@ class TextTune_Settings {
      * Render the model dropdown.
      */
     public function render_model_field() {
-        $settings = get_option( 'texttune_ai_settings', array() );
-        $current  = isset( $settings['model'] ) ? $settings['model'] : 'gpt-4o';
+        $settings       = get_option( 'texttune_ai_settings', array() );
+        $current        = isset( $settings['model'] ) ? $settings['model'] : 'gpt-4o';
+        $saved_provider = isset( $settings['provider'] ) ? $settings['provider'] : 'openai';
 
         foreach ( $this->providers as $provider_key => $provider ) {
+            $models = $this->get_provider_models( $provider_key );
+
+            // Keep a saved-but-no-longer-listed model selectable instead of
+            // silently jumping to another one.
+            if ( $provider_key === $saved_provider && '' !== $current && ! isset( $models[ $current ] ) ) {
+                $models = array(
+                    /* translators: %s: Model id */
+                    $current => sprintf( __( '%s (gespeichert)', 'texttune-ai' ), $current ),
+                ) + $models;
+            }
             ?>
             <select
                 name="texttune_ai_settings[model]"
                 class="texttune-model-select"
                 data-provider="<?php echo esc_attr( $provider_key ); ?>"
             >
-                <?php foreach ( $provider['models'] as $model_key => $model_label ) : ?>
+                <?php foreach ( $models as $model_key => $model_label ) : ?>
                     <option
                         value="<?php echo esc_attr( $model_key ); ?>"
                         <?php selected( $current, $model_key ); ?>
@@ -409,11 +522,37 @@ class TextTune_Settings {
             </select>
             <?php
         }
+
+        $refresh_url = wp_nonce_url(
+            add_query_arg(
+                'texttune-refresh-models',
+                '1',
+                admin_url( 'options-general.php?page=texttune-ai&tab=settings' )
+            ),
+            'texttune_refresh_models'
+        );
         ?>
+        <a href="<?php echo esc_url( $refresh_url ); ?>" class="button button-secondary">
+            <?php esc_html_e( 'Modelle aktualisieren', 'texttune-ai' ); ?>
+        </a>
         <p class="description">
-            <?php esc_html_e( 'Wähle das KI-Modell für die Textoptimierung.', 'texttune-ai' ); ?>
+            <?php esc_html_e( 'Wähle das KI-Modell für die Textoptimierung. Die Liste wird von der Provider-API abgerufen und zwischengespeichert.', 'texttune-ai' ); ?>
         </p>
         <?php
+        $last_error = TextTune_Models::get_last_error( $saved_provider );
+        if ( null !== $last_error && ! empty( $settings['api_key'] ) ) :
+            ?>
+            <p class="description" style="color: #d63638;">
+                <?php
+                printf(
+                    /* translators: %s: Error message */
+                    esc_html__( 'Dynamische Modell-Liste konnte nicht geladen werden – Standardliste wird angezeigt. (%s)', 'texttune-ai' ),
+                    esc_html( $last_error )
+                );
+                ?>
+            </p>
+            <?php
+        endif;
     }
 
     /**
@@ -511,11 +650,20 @@ class TextTune_Settings {
      * Render vision model override dropdown per provider.
      */
     public function render_vision_model_field() {
-        $settings = get_option( 'texttune_ai_settings', array() );
-        $vision   = isset( $settings['vision'] ) && is_array( $settings['vision'] ) ? $settings['vision'] : array();
-        $current  = isset( $vision['model'] ) ? $vision['model'] : '';
+        $settings       = get_option( 'texttune_ai_settings', array() );
+        $vision         = isset( $settings['vision'] ) && is_array( $settings['vision'] ) ? $settings['vision'] : array();
+        $current        = isset( $vision['model'] ) ? $vision['model'] : '';
+        $saved_provider = isset( $settings['provider'] ) ? $settings['provider'] : 'openai';
 
         foreach ( $this->providers as $provider_key => $provider ) {
+            $models = $this->get_provider_models( $provider_key );
+
+            if ( $provider_key === $saved_provider && '' !== $current && ! isset( $models[ $current ] ) ) {
+                $models = array(
+                    /* translators: %s: Model id */
+                    $current => sprintf( __( '%s (gespeichert)', 'texttune-ai' ), $current ),
+                ) + $models;
+            }
             ?>
             <select
                 name="texttune_ai_settings[vision][model]"
@@ -525,7 +673,7 @@ class TextTune_Settings {
                 <option value="" <?php selected( $current, '' ); ?>>
                     <?php esc_html_e( '— Gleiches Modell wie Textoptimierung —', 'texttune-ai' ); ?>
                 </option>
-                <?php foreach ( $provider['models'] as $model_key => $model_label ) : ?>
+                <?php foreach ( $models as $model_key => $model_label ) : ?>
                     <option
                         value="<?php echo esc_attr( $model_key ); ?>"
                         <?php selected( $current, $model_key ); ?>
@@ -538,7 +686,7 @@ class TextTune_Settings {
         }
         ?>
         <p class="description">
-            <?php esc_html_e( 'Alle unterstützten Modelle sind vision-fähig. Leer lassen, um dasselbe Modell wie für die Textoptimierung zu nutzen.', 'texttune-ai' ); ?>
+            <?php esc_html_e( 'Die Liste entspricht der Modell-Auswahl in den Einstellungen. Leer lassen, um dasselbe Modell wie für die Textoptimierung zu nutzen.', 'texttune-ai' ); ?>
         </p>
         <?php
     }
@@ -596,6 +744,15 @@ class TextTune_Settings {
      * Show admin notices when API key is missing.
      */
     public function show_admin_notices() {
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- display-only flag set by our own redirect.
+        if ( isset( $_GET['page'], $_GET['models-refreshed'] ) && 'texttune-ai' === $_GET['page'] ) {
+            ?>
+            <div class="notice notice-success is-dismissible">
+                <p><?php esc_html_e( 'TextTune AI: Modell-Liste wurde aktualisiert.', 'texttune-ai' ); ?></p>
+            </div>
+            <?php
+        }
+
         $settings = get_option( 'texttune_ai_settings', array() );
 
         if ( empty( $settings['api_key'] ) ) {

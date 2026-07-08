@@ -35,6 +35,7 @@ unset( $texttune_puc_path );
 // instead of a bare fatal without context.
 try {
     require_once TEXTTUNE_PLUGIN_DIR . 'includes/class-texttune-encryption.php';
+    require_once TEXTTUNE_PLUGIN_DIR . 'includes/class-texttune-models.php';
     require_once TEXTTUNE_PLUGIN_DIR . 'includes/class-texttune-activator.php';
     require_once TEXTTUNE_PLUGIN_DIR . 'includes/class-texttune-settings.php';
     require_once TEXTTUNE_PLUGIN_DIR . 'includes/class-texttune-openai.php';
