@@ -12,6 +12,11 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+// Guard against a duplicate copy of the plugin defining this class again.
+if ( class_exists( 'TextTune_REST_API_Vision' ) ) {
+    return;
+}
+
 class TextTune_REST_API_Vision {
 
     const DEFAULT_PROMPT = "Du bist ein Bildanalyse-Assistent für eine WordPress-Mediathek. Analysiere das bereitgestellte Bild und erzeuge Metadaten in der Sprache: {language}.\n\nDateiname (nur als Kontext, ignoriere generische Kamera-Namen wie IMG_1234):\n{filename}\n\nGib ausschließlich ein einzelnes JSON-Objekt mit genau diesen vier Schlüsseln zurück:\n- \"alt\":         kurzer beschreibender Alt-Text (max. 125 Zeichen, kein \"Bild von ...\")\n- \"title\":       prägnanter Titel (max. 60 Zeichen)\n- \"caption\":     ein Satz als Bildunterschrift\n- \"description\": 2-4 Sätze ausführliche Beschreibung\n\nKeine Einleitung, kein Markdown, keine Code-Fences. Nur das JSON-Objekt.";

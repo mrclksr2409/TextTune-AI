@@ -3,7 +3,7 @@
  * Plugin Name: TextTune AI
  * Plugin URI:  https://github.com/mrclksr2409/TextTune-AI
  * Description: KI-gestützte Textoptimierung direkt im WordPress Block-Editor und Classic Editor. Unterstützt OpenAI und Anthropic.
- * Version:     1.0.3
+ * Version:     1.0.4
  * Author:      Marcel Kaiser
  * Text Domain: texttune-ai
  * Domain Path: /languages
@@ -19,10 +19,53 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
-define( 'TEXTTUNE_VERSION', '1.0.3' );
-define( 'TEXTTUNE_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
-define( 'TEXTTUNE_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
-define( 'TEXTTUNE_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
+// Bail out if another copy of TextTune AI is already loaded (e.g. an old
+// install alongside a freshly uploaded "TextTune-AI-main" folder). Loading
+// a second copy would fatal on redeclared classes/functions.
+if ( defined( 'TEXTTUNE_VERSION' ) ) {
+    add_action(
+        'admin_notices',
+        function () {
+            echo '<div class="notice notice-error"><p>';
+            echo esc_html__( 'TextTune AI: Es sind zwei Kopien des Plugins installiert. Bitte deaktiviere und lösche die alte Kopie unter „Plugins → Installierte Plugins“.', 'texttune-ai' );
+            echo '</p></div>';
+        }
+    );
+    return;
+}
+
+// Refuse to load on unsupported PHP before any include is parsed, so old
+// hosts get a notice instead of a parse-time fatal from a bundled file.
+if ( version_compare( PHP_VERSION, '7.4', '<' ) ) {
+    add_action(
+        'admin_notices',
+        function () {
+            echo '<div class="notice notice-error"><p>';
+            echo esc_html(
+                sprintf(
+                    /* translators: %s: current PHP version. */
+                    __( 'TextTune AI benötigt PHP 7.4 oder höher. Diese Website verwendet PHP %s.', 'texttune-ai' ),
+                    PHP_VERSION
+                )
+            );
+            echo '</p></div>';
+        }
+    );
+    return;
+}
+
+if ( ! defined( 'TEXTTUNE_VERSION' ) ) {
+    define( 'TEXTTUNE_VERSION', '1.0.4' );
+}
+if ( ! defined( 'TEXTTUNE_PLUGIN_DIR' ) ) {
+    define( 'TEXTTUNE_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
+}
+if ( ! defined( 'TEXTTUNE_PLUGIN_URL' ) ) {
+    define( 'TEXTTUNE_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
+}
+if ( ! defined( 'TEXTTUNE_PLUGIN_BASENAME' ) ) {
+    define( 'TEXTTUNE_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
+}
 
 // Load Plugin Update Checker (bundled in lib/).
 $texttune_puc_path = TEXTTUNE_PLUGIN_DIR . 'lib/plugin-update-checker/plugin-update-checker.php';
@@ -45,16 +88,33 @@ try {
     require_once TEXTTUNE_PLUGIN_DIR . 'includes/class-texttune-rest-api-vision.php';
     require_once TEXTTUNE_PLUGIN_DIR . 'includes/class-texttune-media-integration.php';
 } catch ( \Throwable $e ) {
-    error_log(
-        sprintf(
-            'TEXTTUNE-AI LOAD ERROR: %s in %s:%d',
-            $e->getMessage(),
-            $e->getFile(),
-            $e->getLine()
-        )
+    $texttune_load_error = sprintf(
+        '%s in %s:%d',
+        $e->getMessage(),
+        $e->getFile(),
+        $e->getLine()
     );
-    // Re-throw so WordPress still shows the activation-failed screen.
-    throw $e;
+    error_log( 'TEXTTUNE-AI LOAD ERROR: ' . $texttune_load_error );
+    if ( function_exists( 'update_option' ) ) {
+        update_option( 'texttune_ai_last_error', $texttune_load_error, false );
+    }
+    // Show the real error in the admin instead of dying with a bare fatal,
+    // and skip the rest of the bootstrap so the site stays usable.
+    add_action(
+        'admin_notices',
+        function () use ( $texttune_load_error ) {
+            echo '<div class="notice notice-error"><p>';
+            echo esc_html(
+                sprintf(
+                    /* translators: %s: the actual error message. */
+                    __( 'TextTune AI konnte nicht geladen werden: %s', 'texttune-ai' ),
+                    $texttune_load_error
+                )
+            );
+            echo '</p></div>';
+        }
+    );
+    return;
 }
 
 // Activation hook.
@@ -63,6 +123,7 @@ register_activation_hook( __FILE__, array( 'TextTune_Activator', 'activate' ) );
 /**
  * Initialize the plugin.
  */
+if ( ! function_exists( 'texttune_ai_init' ) ) :
 function texttune_ai_init() {
     try {
         // Load text domain.
@@ -108,11 +169,13 @@ function texttune_ai_init() {
         }
     }
 }
+endif;
 add_action( 'plugins_loaded', 'texttune_ai_init' );
 
 /**
  * Enqueue block editor assets.
  */
+if ( ! function_exists( 'texttune_ai_enqueue_editor_assets' ) ) :
 function texttune_ai_enqueue_editor_assets() {
     $post_type = get_post_type();
     if ( ! $post_type ) {
@@ -148,6 +211,7 @@ function texttune_ai_enqueue_editor_assets() {
         )
     );
 }
+endif;
 add_action( 'enqueue_block_editor_assets', 'texttune_ai_enqueue_editor_assets' );
 
 /**
@@ -156,10 +220,12 @@ add_action( 'enqueue_block_editor_assets', 'texttune_ai_enqueue_editor_assets' )
  * @param array $plugins Registered TinyMCE plugins.
  * @return array Modified plugins array.
  */
+if ( ! function_exists( 'texttune_ai_register_tinymce_plugin' ) ) :
 function texttune_ai_register_tinymce_plugin( $plugins ) {
     $plugins['texttune_ai'] = TEXTTUNE_PLUGIN_URL . 'assets/js/texttune-classic-editor.js';
     return $plugins;
 }
+endif;
 
 /**
  * Add TextTune AI button to TinyMCE toolbar.
@@ -167,14 +233,17 @@ function texttune_ai_register_tinymce_plugin( $plugins ) {
  * @param array $buttons TinyMCE toolbar buttons.
  * @return array Modified buttons array.
  */
+if ( ! function_exists( 'texttune_ai_add_tinymce_button' ) ) :
 function texttune_ai_add_tinymce_button( $buttons ) {
     $buttons[] = 'texttune_ai_menu';
     return $buttons;
 }
+endif;
 
 /**
  * Initialize Classic Editor integration.
  */
+if ( ! function_exists( 'texttune_ai_classic_editor_init' ) ) :
 function texttune_ai_classic_editor_init() {
     // Only for users who can edit posts.
     if ( ! current_user_can( 'edit_posts' ) ) {
@@ -189,6 +258,7 @@ function texttune_ai_classic_editor_init() {
     add_filter( 'mce_external_plugins', 'texttune_ai_register_tinymce_plugin' );
     add_filter( 'mce_buttons_2', 'texttune_ai_add_tinymce_button' );
 }
+endif;
 add_action( 'admin_init', 'texttune_ai_classic_editor_init' );
 
 /**
@@ -196,6 +266,7 @@ add_action( 'admin_init', 'texttune_ai_classic_editor_init' );
  *
  * @param string $hook_suffix The admin page hook suffix.
  */
+if ( ! function_exists( 'texttune_ai_classic_editor_enqueue' ) ) :
 function texttune_ai_classic_editor_enqueue( $hook_suffix ) {
     if ( ! in_array( $hook_suffix, array( 'post.php', 'post-new.php' ), true ) ) {
         return;
@@ -227,4 +298,5 @@ function texttune_ai_classic_editor_enqueue( $hook_suffix ) {
         'before'
     );
 }
+endif;
 add_action( 'admin_enqueue_scripts', 'texttune_ai_classic_editor_enqueue' );

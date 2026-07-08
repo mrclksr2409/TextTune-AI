@@ -11,6 +11,11 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+// Guard against a duplicate copy of the plugin defining this class again.
+if ( class_exists( 'TextTune_Anthropic' ) ) {
+    return;
+}
+
 class TextTune_Anthropic {
 
     /**
