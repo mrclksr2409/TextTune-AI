@@ -12,6 +12,11 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+// Guard against a duplicate copy of the plugin defining this class again.
+if ( class_exists( 'TextTune_Image_Analyzer' ) ) {
+    return;
+}
+
 class TextTune_Image_Analyzer {
 
     const DEFAULT_MAX_EDGE  = 1568;

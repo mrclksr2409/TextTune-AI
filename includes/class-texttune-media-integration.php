@@ -15,6 +15,11 @@ if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
 
+// Guard against a duplicate copy of the plugin defining this class again.
+if ( class_exists( 'TextTune_Media_Integration' ) ) {
+    return;
+}
+
 class TextTune_Media_Integration {
 
     const BULK_ACTION = 'texttune_analyze';

@@ -13,3 +13,4 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 }
 
 delete_option( 'texttune_ai_settings' );
+delete_option( 'texttune_ai_last_error' );
