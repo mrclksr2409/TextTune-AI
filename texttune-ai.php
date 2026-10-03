@@ -146,13 +146,16 @@ function texttune_ai_init() {
                 __FILE__,
                 'texttune-ai'
             );
-            // Look for updates on the stable main branch (releases/tags created from main).
+            // Updates come straight from the main branch (version from the plugin header).
             $update_checker->setBranch( 'main' );
-            // Prefer attached release asset zip over auto-generated source zip.
-            $source = $update_checker->getVcsSource();
-            if ( $source ) {
-                $source->enableReleaseAssets();
-            }
+            // Ignore GitHub releases and tags so only the branch HEAD is used.
+            add_filter(
+                $update_checker->getUniqueName( 'vcs_update_detection_strategies' ),
+                static function ( $strategies ) {
+                    unset( $strategies['latest_release'], $strategies['latest_tag'] );
+                    return $strategies;
+                }
+            );
         }
     } catch ( \Throwable $e ) {
         error_log(
