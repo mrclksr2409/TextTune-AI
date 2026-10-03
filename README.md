@@ -289,3 +289,9 @@ TextTune-AI/
 ## Lizenz
 
 GPL-2.0-or-later — [Lizenztext](https://www.gnu.org/licenses/gpl-2.0.html)
+
+## Changelog
+
+### 1.0.5 — 2026-10-03
+- Changed: update checker now explicitly follows the `main` branch.
+- Changed: bundled Plugin Update Checker updated to v5.7.
