@@ -146,6 +146,8 @@ function texttune_ai_init() {
                 __FILE__,
                 'texttune-ai'
             );
+            // Look for updates on the stable main branch (releases/tags created from main).
+            $update_checker->setBranch( 'main' );
             // Prefer attached release asset zip over auto-generated source zip.
             $source = $update_checker->getVcsSource();
             if ( $source ) {
