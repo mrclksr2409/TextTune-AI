@@ -1,7 +1,9 @@
 /**
  * TextTune AI Admin Settings JavaScript
  *
- * Handles provider/model toggle and API key visibility.
+ * Handles the provider/model toggle and keeps the post-save redirect on the
+ * active tab. Tab switching and the API key reveal button are provided by
+ * WP-Backend UI (wpb-admin.js, data-wpb-tabs / data-wpb-reveal).
  */
 (function () {
     'use strict';
@@ -10,8 +12,8 @@
         var radios = document.querySelectorAll('.texttune-provider-radio');
         var modelSelects = document.querySelectorAll('.texttune-model-select');
         var visionModelSelects = document.querySelectorAll('.texttune-vision-model-select');
-        var toggleBtn = document.getElementById('texttune-toggle-key');
-        var apiKeyInput = document.getElementById('texttune-api-key');
+        var tabLinks = document.querySelectorAll('.texttune-settings .nav-tab[data-texttune-tab]');
+        var refererInput = document.getElementById('texttune-referer');
 
         function syncSelectsForProvider(selects, provider, nameWhenActive) {
             selects.forEach(function (select) {
@@ -45,17 +47,31 @@
         // Initial state.
         updateModelVisibility();
 
-        // Toggle API key visibility.
-        if (toggleBtn && apiKeyInput) {
-            toggleBtn.addEventListener('click', function () {
-                if (apiKeyInput.type === 'password') {
-                    apiKeyInput.type = 'text';
-                    toggleBtn.textContent = 'Verbergen';
-                } else {
-                    apiKeyInput.type = 'password';
-                    toggleBtn.textContent = 'Anzeigen';
-                }
+        /**
+         * Point the post-save redirect (_wp_http_referer) at the given tab, so
+         * options.php returns to the tab the user was on.
+         */
+        function syncRefererTab(tab) {
+            if (!refererInput || !tab) return;
+            var url = refererInput.value;
+            if (/([?&])tab=[^&#]*/.test(url)) {
+                url = url.replace(/([?&])tab=[^&#]*/, '$1tab=' + encodeURIComponent(tab));
+            } else {
+                url += (url.indexOf('?') === -1 ? '?' : '&') + 'tab=' + encodeURIComponent(tab);
+            }
+            refererInput.value = url;
+        }
+
+        tabLinks.forEach(function (link) {
+            link.addEventListener('click', function () {
+                syncRefererTab(link.getAttribute('data-texttune-tab'));
             });
+        });
+
+        // Initial state (wpb-admin.js may have activated a tab from the URL hash).
+        var activeTab = document.querySelector('.texttune-settings .nav-tab-active[data-texttune-tab]');
+        if (activeTab) {
+            syncRefererTab(activeTab.getAttribute('data-texttune-tab'));
         }
     });
 })();

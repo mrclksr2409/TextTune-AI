@@ -57,6 +57,11 @@ class TextTune_Settings {
         add_action( 'admin_init', array( $this, 'maybe_handle_refresh_models' ) );
         add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_assets' ) );
         add_action( 'admin_notices', array( $this, 'show_admin_notices' ) );
+
+        // Use the shared WP-Backend UI design system on the settings page.
+        if ( function_exists( 'wpb_admin_ui_register' ) ) {
+            wpb_admin_ui_register( array( 'pages' => array( 'texttune-ai' ) ) );
+        }
     }
 
     /**
@@ -373,42 +378,52 @@ class TextTune_Settings {
         $raw_tab    = isset( $_GET['tab'] ) ? sanitize_key( wp_unslash( (string) $_GET['tab'] ) ) : '';
         $active_tab = in_array( $raw_tab, $allowed_tabs, true ) ? $raw_tab : 'settings';
 
-        $settings_url = admin_url( 'options-general.php?page=texttune-ai&tab=settings' );
-        $prompts_url  = admin_url( 'options-general.php?page=texttune-ai&tab=prompts' );
-        $vision_url   = admin_url( 'options-general.php?page=texttune-ai&tab=vision' );
-        $referer_url  = admin_url( 'options-general.php?page=texttune-ai&tab=' . $active_tab );
+        $referer_url = admin_url( 'options-general.php?page=texttune-ai&tab=' . $active_tab );
+        $tabs        = array(
+            'settings' => __( 'Einstellungen', 'texttune-ai' ),
+            'prompts'  => __( 'Prompts', 'texttune-ai' ),
+            'vision'   => __( 'Bilderkennung', 'texttune-ai' ),
+        );
         ?>
         <div class="wrap texttune-settings">
-            <h1><?php echo esc_html( get_admin_page_title() ); ?></h1>
+            <?php
+            if ( class_exists( 'WPB_Admin_UI' ) ) {
+                WPB_Admin_UI::header(
+                    array(
+                        'title'    => __( 'TextTune AI', 'texttune-ai' ),
+                        'subtitle' => __( 'KI-gestützte Textoptimierung und Bilderkennung mit OpenAI oder Anthropic', 'texttune-ai' ),
+                        'icon'     => 'dashicons-edit-large',
+                        'version'  => TEXTTUNE_VERSION,
+                    )
+                );
+            } else {
+                echo '<h1>' . esc_html( get_admin_page_title() ) . '</h1>';
+            }
+            ?>
 
-            <nav class="nav-tab-wrapper" aria-label="<?php esc_attr_e( 'TextTune AI Tabs', 'texttune-ai' ); ?>">
-                <a href="<?php echo esc_url( $settings_url ); ?>"
-                   class="nav-tab<?php echo ( 'settings' === $active_tab ) ? ' nav-tab-active' : ''; ?>">
-                    <?php esc_html_e( 'Einstellungen', 'texttune-ai' ); ?>
-                </a>
-                <a href="<?php echo esc_url( $prompts_url ); ?>"
-                   class="nav-tab<?php echo ( 'prompts' === $active_tab ) ? ' nav-tab-active' : ''; ?>">
-                    <?php esc_html_e( 'Prompts', 'texttune-ai' ); ?>
-                </a>
-                <a href="<?php echo esc_url( $vision_url ); ?>"
-                   class="nav-tab<?php echo ( 'vision' === $active_tab ) ? ' nav-tab-active' : ''; ?>">
-                    <?php esc_html_e( 'Bilderkennung', 'texttune-ai' ); ?>
-                </a>
+            <nav class="nav-tab-wrapper" data-wpb-tabs aria-label="<?php esc_attr_e( 'TextTune AI Tabs', 'texttune-ai' ); ?>">
+                <?php foreach ( $tabs as $tab_key => $tab_label ) : ?>
+                    <a href="#texttune-tab-<?php echo esc_attr( $tab_key ); ?>"
+                       class="nav-tab<?php echo ( $tab_key === $active_tab ) ? ' nav-tab-active' : ''; ?>"
+                       data-texttune-tab="<?php echo esc_attr( $tab_key ); ?>">
+                        <?php echo esc_html( $tab_label ); ?>
+                    </a>
+                <?php endforeach; ?>
             </nav>
 
             <form action="options.php" method="post">
                 <?php settings_fields( 'texttune_ai_options' ); ?>
-                <input type="hidden" name="_wp_http_referer" value="<?php echo esc_attr( $referer_url ); ?>" />
+                <input type="hidden" id="texttune-referer" name="_wp_http_referer" value="<?php echo esc_attr( $referer_url ); ?>" />
 
-                <div class="texttune-tab-panel" id="texttune-tab-settings"<?php echo ( 'settings' === $active_tab ) ? '' : ' hidden'; ?>>
+                <div class="wpb-tab-panel" id="texttune-tab-settings"<?php echo ( 'settings' === $active_tab ) ? '' : ' hidden'; ?>>
                     <?php do_settings_sections( 'texttune-ai-settings' ); ?>
                 </div>
 
-                <div class="texttune-tab-panel" id="texttune-tab-prompts"<?php echo ( 'prompts' === $active_tab ) ? '' : ' hidden'; ?>>
+                <div class="wpb-tab-panel" id="texttune-tab-prompts"<?php echo ( 'prompts' === $active_tab ) ? '' : ' hidden'; ?>>
                     <?php do_settings_sections( 'texttune-ai-prompts' ); ?>
                 </div>
 
-                <div class="texttune-tab-panel" id="texttune-tab-vision"<?php echo ( 'vision' === $active_tab ) ? '' : ' hidden'; ?>>
+                <div class="wpb-tab-panel" id="texttune-tab-vision"<?php echo ( 'vision' === $active_tab ) ? '' : ' hidden'; ?>>
                     <?php do_settings_sections( 'texttune-ai-vision' ); ?>
                 </div>
 
@@ -475,7 +490,7 @@ class TextTune_Settings {
             class="regular-text"
             autocomplete="off"
         />
-        <button type="button" id="texttune-toggle-key" class="button button-secondary">
+        <button type="button" class="button button-secondary" data-wpb-reveal="texttune-api-key" aria-controls="texttune-api-key" aria-pressed="false">
             <?php esc_html_e( 'Anzeigen', 'texttune-ai' ); ?>
         </button>
         <?php if ( $has_key ) : ?>
@@ -484,7 +499,7 @@ class TextTune_Settings {
             </p>
         <?php endif; ?>
         <?php if ( ! TextTune_Encryption::is_available() ) : ?>
-            <p class="description" style="color: #d63638;">
+            <p class="description wpb-text-error">
                 <?php esc_html_e( 'Warnung: OpenSSL ist nicht verfügbar. Der API-Schlüssel wird nur Base64-kodiert gespeichert.', 'texttune-ai' ); ?>
             </p>
         <?php endif; ?>
@@ -547,7 +562,7 @@ class TextTune_Settings {
         $last_error = TextTune_Models::get_last_error( $saved_provider );
         if ( null !== $last_error && ! empty( $settings['api_key'] ) ) :
             ?>
-            <p class="description" style="color: #d63638;">
+            <p class="description wpb-text-error">
                 <?php
                 printf(
                     /* translators: %s: Error message */
@@ -729,17 +744,30 @@ class TextTune_Settings {
             return;
         }
 
-        wp_enqueue_style(
-            'texttune-admin',
-            TEXTTUNE_PLUGIN_URL . 'assets/css/texttune-admin.css',
-            array(),
-            TEXTTUNE_VERSION
-        );
+        $deps = array();
+        if ( class_exists( 'WPB_Admin_UI' ) ) {
+            // Already enqueued by the library on registered screens; the call is
+            // idempotent and guarantees the handle exists for the inline script.
+            WPB_Admin_UI::enqueue_assets();
+            $deps = array( WPB_Admin_UI::HANDLE );
+
+            // German labels for the shared password reveal button (data-wpb-reveal).
+            wp_add_inline_script(
+                WPB_Admin_UI::HANDLE,
+                'window.wpbAdminUIL10n = Object.assign( window.wpbAdminUIL10n || {}, ' . wp_json_encode(
+                    array(
+                        'show' => __( 'Anzeigen', 'texttune-ai' ),
+                        'hide' => __( 'Verbergen', 'texttune-ai' ),
+                    )
+                ) . ' );',
+                'before'
+            );
+        }
 
         wp_enqueue_script(
             'texttune-admin',
             TEXTTUNE_PLUGIN_URL . 'assets/js/texttune-admin.js',
-            array(),
+            $deps,
             TEXTTUNE_VERSION,
             true
         );

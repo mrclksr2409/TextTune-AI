@@ -1,17 +1,21 @@
 /**
  * TextTune AI — Media library integration styles.
+ *
+ * The media screens are not registered with WP-Backend UI, so its stylesheet
+ * is usually not loaded here. Colors and radii use the shared --wpb-* tokens
+ * when available and fall back to the WordPress core values otherwise.
  */
 
 .texttune-analyze-status {
     font-style: italic;
-    color: #555;
+    color: var(--wpb-text-muted, #555);
 }
 .texttune-analyze-status.is-error {
-    color: #b32d2e;
+    color: var(--wpb-error, #b32d2e);
     font-style: normal;
 }
 .texttune-analyze-status.is-success {
-    color: #1b7f37;
+    color: var(--wpb-success, #1b7f37);
     font-style: normal;
 }
 
@@ -27,19 +31,19 @@
 }
 
 .texttune-modal {
-    background: #fff;
-    border-radius: 4px;
+    background: var(--wpb-surface, #fff);
+    border-radius: var(--wpb-radius, 4px);
     max-width: 900px;
     width: 100%;
     max-height: 90vh;
     display: flex;
     flex-direction: column;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    box-shadow: var(--wpb-shadow-lg, 0 10px 40px rgba(0, 0, 0, 0.3));
 }
 
 .texttune-modal-header {
     padding: 12px 20px;
-    border-bottom: 1px solid #dcdcde;
+    border-bottom: 1px solid var(--wpb-border, #dcdcde);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -54,11 +58,11 @@
     font-size: 24px;
     line-height: 1;
     cursor: pointer;
-    color: #50575e;
+    color: var(--wpb-text-muted, #50575e);
     padding: 4px 8px;
 }
 .texttune-modal-close:hover {
-    color: #000;
+    color: var(--wpb-text, #000);
 }
 
 .texttune-modal-body {
@@ -68,7 +72,7 @@
 
 .texttune-modal-footer {
     padding: 12px 20px;
-    border-top: 1px solid #dcdcde;
+    border-top: 1px solid var(--wpb-border, #dcdcde);
     display: flex;
     justify-content: flex-end;
     gap: 8px;
@@ -90,7 +94,7 @@
     text-align: left;
     padding: 8px 10px;
     vertical-align: top;
-    border-bottom: 1px solid #dcdcde;
+    border-bottom: 1px solid var(--wpb-border, #dcdcde);
 }
 .texttune-modal-table .texttune-cell-current,
 .texttune-modal-table .texttune-cell-generated {
@@ -98,7 +102,7 @@
     word-break: break-word;
 }
 .texttune-modal-table .texttune-cell-current em {
-    color: #8c8f94;
+    color: var(--wpb-text-subtle, #8c8f94);
 }
 .texttune-modal-table .texttune-cell-action {
     white-space: nowrap;
@@ -111,13 +115,13 @@
 .texttune-progress {
     width: 100%;
     height: 8px;
-    background: #f0f0f1;
-    border-radius: 4px;
+    background: var(--wpb-border, #f0f0f1);
+    border-radius: var(--wpb-radius-pill, 4px);
     overflow: hidden;
     margin-top: 6px;
 }
 .texttune-progress-bar {
     height: 100%;
-    background: #2271b1;
+    background: var(--wpb-accent, var(--wp-admin-theme-color, #2271b1));
     transition: width 0.2s ease;
 }

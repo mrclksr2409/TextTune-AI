@@ -1,0 +1,1495 @@
+/**
+ * WP-Backend UI — shared admin design system.
+ *
+ * Two layers:
+ *  1. Core layer: restyles native WordPress admin primitives (.wrap, h1,
+ *     .nav-tab, .form-table, .notice, .button, inputs, .widefat …). Scoped to
+ *     body.wpb-admin, which WPB_Admin_UI adds on registered screens only.
+ *  2. Components: namespaced .wpb-* classes (cards, badges, stats, toggles,
+ *     modal, toast …). Usable on any screen where the stylesheet is loaded.
+ *
+ * Every visual decision goes through the custom properties below, so a
+ * single change here updates all plugins at once.
+ *
+ * @package WP_Backend_UI
+ */
+
+/* ==========================================================================
+   Tokens
+   ========================================================================== */
+
+/* Declared on body too: WP sets --wp-admin-theme-color on body per color scheme. */
+:root,
+body {
+	--wpb-accent: var(--wp-admin-theme-color, #2271b1);
+	--wpb-accent-hover: var(--wp-admin-theme-color-darker-10, #135e96);
+	--wpb-accent-soft: #eef4fb;
+	--wpb-focus-ring: 0 0 0 3px rgba(34, 113, 177, 0.25);
+
+	--wpb-bg: #f5f6f8;
+	--wpb-surface: #ffffff;
+	--wpb-surface-muted: #f9fafb;
+	--wpb-border: #e4e7ec;
+	--wpb-border-strong: #d0d5dd;
+
+	--wpb-text: #1d2327;
+	--wpb-text-muted: #646970;
+	--wpb-text-subtle: #8c8f94;
+
+	--wpb-success: #067647;
+	--wpb-success-bg: #ecfdf3;
+	--wpb-success-border: #abefc6;
+	--wpb-warning: #b54708;
+	--wpb-warning-bg: #fffaeb;
+	--wpb-warning-border: #fedf89;
+	--wpb-error: #b42318;
+	--wpb-error-bg: #fef3f2;
+	--wpb-error-border: #fecdca;
+	--wpb-info: #175cd3;
+	--wpb-info-bg: #eff8ff;
+	--wpb-info-border: #b2ddff;
+
+	--wpb-radius-sm: 6px;
+	--wpb-radius: 10px;
+	--wpb-radius-lg: 14px;
+	--wpb-radius-pill: 999px;
+
+	--wpb-shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.05);
+	--wpb-shadow: 0 1px 3px rgba(16, 24, 40, 0.08), 0 1px 2px rgba(16, 24, 40, 0.04);
+	--wpb-shadow-lg: 0 12px 32px rgba(16, 24, 40, 0.16);
+
+	--wpb-space-1: 4px;
+	--wpb-space-2: 8px;
+	--wpb-space-3: 12px;
+	--wpb-space-4: 16px;
+	--wpb-space-5: 24px;
+	--wpb-space-6: 32px;
+
+	--wpb-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+	--wpb-font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+	--wpb-transition: 120ms ease;
+
+	--wpb-content-width: 1200px;
+}
+
+@supports (color: color-mix(in srgb, red 50%, blue)) {
+	:root,
+	body {
+		--wpb-accent-soft: color-mix(in srgb, var(--wpb-accent) 8%, #fff);
+		--wpb-focus-ring: 0 0 0 3px color-mix(in srgb, var(--wpb-accent) 25%, transparent);
+	}
+}
+
+/* ==========================================================================
+   Core layer — page frame
+   ========================================================================== */
+
+body.wpb-admin,
+.wpb-admin #wpwrap {
+	background: var(--wpb-bg);
+}
+
+/* Mirror core's left padding on #wpcontent so the centered column is truly centered. */
+.wpb-admin #wpcontent {
+	padding-right: 20px;
+}
+
+@media screen and (max-width: 782px) {
+	.wpb-admin #wpcontent {
+		padding-right: 10px;
+	}
+}
+
+.wpb-admin .wrap {
+	max-width: var(--wpb-content-width);
+	margin-left: auto;
+	margin-right: auto;
+	font-family: var(--wpb-font);
+	color: var(--wpb-text);
+}
+
+.wpb-admin .wrap > h1,
+.wpb-admin .wrap > .wp-heading-inline {
+	font-size: 22px;
+	font-weight: 600;
+	line-height: 1.3;
+	letter-spacing: -0.01em;
+	color: var(--wpb-text);
+}
+
+.wpb-admin .wrap h2 {
+	font-size: 15px;
+	font-weight: 600;
+	color: var(--wpb-text);
+}
+
+/* Settings API section headings (plain h2 anywhere inside a form, e.g. in tab panels). */
+.wpb-admin .wrap form h2:not([class]) {
+	margin: var(--wpb-space-6) 0 var(--wpb-space-1);
+}
+
+.wpb-admin .wrap form > h2:not([class]):first-of-type,
+.wpb-admin .wrap form h2:not([class]):first-child {
+	margin-top: var(--wpb-space-5);
+}
+
+.wpb-admin .wrap form h2:not([class]) + p {
+	margin-top: 0;
+	color: var(--wpb-text-muted);
+}
+
+.wpb-admin .wrap p.description,
+.wpb-admin .wrap .description {
+	color: var(--wpb-text-muted);
+	font-size: 13px;
+	font-style: normal;
+}
+
+.wpb-admin .wrap a {
+	color: var(--wpb-accent);
+}
+
+.wpb-admin .wrap a:hover {
+	color: var(--wpb-accent-hover);
+}
+
+.wpb-admin .wrap code {
+	background: var(--wpb-surface-muted);
+	border: 1px solid var(--wpb-border);
+	border-radius: 4px;
+	padding: 1px 5px;
+	font-family: var(--wpb-font-mono);
+	font-size: 12px;
+}
+
+.wpb-admin .wrap hr:not(.wp-header-end) {
+	border: 0;
+	border-top: 1px solid var(--wpb-border);
+	margin: var(--wpb-space-5) 0;
+}
+
+/* ==========================================================================
+   Core layer — tabs
+   ========================================================================== */
+
+.wpb-admin .wrap .nav-tab-wrapper,
+.wpb-tabs {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--wpb-space-5);
+	margin: 0 0 var(--wpb-space-5);
+	padding: 0;
+	border-bottom: 1px solid var(--wpb-border);
+	line-height: inherit;
+}
+
+.wpb-admin .wrap .nav-tab-wrapper .nav-tab,
+.wpb-tabs .nav-tab {
+	float: none;
+	margin: 0 0 -1px;
+	padding: var(--wpb-space-3) 2px;
+	border: 0;
+	border-bottom: 2px solid transparent;
+	background: none;
+	color: var(--wpb-text-muted);
+	font-size: 14px;
+	font-weight: 500;
+	line-height: 1.4;
+	transition: color var(--wpb-transition), border-color var(--wpb-transition);
+}
+
+.wpb-admin .wrap .nav-tab-wrapper .nav-tab:hover,
+.wpb-tabs .nav-tab:hover {
+	background: none;
+	color: var(--wpb-text);
+	border-bottom-color: var(--wpb-border-strong);
+}
+
+.wpb-admin .wrap .nav-tab-wrapper .nav-tab-active,
+.wpb-admin .wrap .nav-tab-wrapper .nav-tab-active:hover,
+.wpb-tabs .nav-tab-active,
+.wpb-tabs .nav-tab-active:hover {
+	background: none;
+	color: var(--wpb-accent);
+	border-bottom-color: var(--wpb-accent);
+}
+
+.wpb-admin .wrap .nav-tab:focus,
+.wpb-tabs .nav-tab:focus {
+	box-shadow: none;
+	outline: 0;
+}
+
+.wpb-admin .wrap .nav-tab:focus-visible,
+.wpb-tabs .nav-tab:focus-visible {
+	box-shadow: var(--wpb-focus-ring);
+	border-radius: 4px 4px 0 0;
+}
+
+.wpb-tab-panel[hidden] {
+	display: none !important;
+}
+
+/* ==========================================================================
+   Core layer — settings tables (rendered as cards)
+   ========================================================================== */
+
+.wpb-admin .wrap .form-table {
+	background: var(--wpb-surface);
+	border: 1px solid var(--wpb-border);
+	border-radius: var(--wpb-radius);
+	border-collapse: separate;
+	border-spacing: 0;
+	box-shadow: var(--wpb-shadow-sm);
+	margin-top: var(--wpb-space-3);
+	margin-bottom: var(--wpb-space-4);
+	overflow: hidden;
+}
+
+.wpb-admin .wrap .form-table th {
+	width: 220px;
+	padding: 20px var(--wpb-space-5);
+	color: var(--wpb-text);
+	font-weight: 600;
+	vertical-align: top;
+}
+
+.wpb-admin .wrap .form-table td {
+	padding: 16px var(--wpb-space-5);
+	vertical-align: top;
+}
+
+.wpb-admin .wrap .form-table tr + tr > th,
+.wpb-admin .wrap .form-table tr + tr > td {
+	border-top: 1px solid var(--wpb-border);
+}
+
+.wpb-admin .wrap .form-table td p.description {
+	margin-top: 6px;
+}
+
+.wpb-admin .wrap .form-table fieldset label {
+	display: inline-block;
+	margin: 2px 0;
+}
+
+/* Inside a card, the table should not draw a second card. */
+.wpb-card .form-table,
+.wpb-admin .wrap .wpb-card .form-table {
+	background: transparent;
+	border: 0;
+	border-radius: 0;
+	box-shadow: none;
+	margin: 0;
+}
+
+.wpb-admin .wrap .wpb-card .form-table th {
+	padding-left: 0;
+}
+
+.wpb-admin .wrap .wpb-card .form-table td {
+	padding-right: 0;
+}
+
+@media screen and (max-width: 782px) {
+	.wpb-admin .wrap .form-table th {
+		width: auto;
+		padding-bottom: 0;
+	}
+
+	.wpb-admin .wrap .form-table td,
+	.wpb-admin .wrap .form-table tr + tr > td {
+		border-top: 0;
+		padding-top: var(--wpb-space-2);
+	}
+}
+
+/* ==========================================================================
+   Core layer — form controls
+   ========================================================================== */
+
+.wpb-admin .wrap input[type="text"],
+.wpb-admin .wrap input[type="email"],
+.wpb-admin .wrap input[type="url"],
+.wpb-admin .wrap input[type="password"],
+.wpb-admin .wrap input[type="number"],
+.wpb-admin .wrap input[type="search"],
+.wpb-admin .wrap input[type="tel"],
+.wpb-admin .wrap input[type="date"],
+.wpb-admin .wrap input[type="time"],
+.wpb-admin .wrap input[type="datetime-local"],
+.wpb-admin .wrap select,
+.wpb-admin .wrap textarea,
+.wpb-input {
+	min-height: 36px;
+	padding: 0 10px;
+	border: 1px solid var(--wpb-border-strong);
+	border-radius: var(--wpb-radius-sm);
+	background-color: var(--wpb-surface);
+	box-shadow: var(--wpb-shadow-sm);
+	color: var(--wpb-text);
+	font-size: 14px;
+	line-height: 2;
+	transition: border-color var(--wpb-transition), box-shadow var(--wpb-transition);
+}
+
+.wpb-admin .wrap select {
+	padding-right: 28px;
+}
+
+/* Core's 50px is too narrow once inputs get comfortable padding. */
+.wpb-admin .wrap input.small-text {
+	width: 88px;
+}
+
+.wpb-admin .wrap textarea,
+textarea.wpb-input {
+	padding: var(--wpb-space-2) 10px;
+	line-height: 1.5;
+}
+
+.wpb-admin .wrap textarea.code,
+.wpb-admin .wrap input.code {
+	font-family: var(--wpb-font-mono);
+	font-size: 13px;
+}
+
+.wpb-admin .wrap input:focus,
+.wpb-admin .wrap select:focus,
+.wpb-admin .wrap textarea:focus,
+.wpb-input:focus {
+	border-color: var(--wpb-accent);
+	box-shadow: var(--wpb-focus-ring);
+	outline: 0;
+}
+
+.wpb-admin .wrap input[disabled],
+.wpb-admin .wrap input[readonly],
+.wpb-admin .wrap select[disabled],
+.wpb-admin .wrap textarea[disabled],
+.wpb-admin .wrap textarea[readonly] {
+	background-color: var(--wpb-surface-muted);
+	color: var(--wpb-text-muted);
+	box-shadow: none;
+}
+
+.wpb-admin .wrap input[type="checkbox"],
+.wpb-admin .wrap input[type="radio"] {
+	border-color: var(--wpb-border-strong);
+	box-shadow: none;
+}
+
+.wpb-admin .wrap input[type="checkbox"] {
+	border-radius: 4px;
+}
+
+.wpb-admin .wrap input[type="checkbox"]:checked,
+.wpb-admin .wrap input[type="radio"]:checked {
+	border-color: var(--wpb-accent);
+}
+
+/* ==========================================================================
+   Core layer — buttons
+   ========================================================================== */
+
+.wpb-admin .wrap .button,
+.wpb-admin .wrap .button-secondary,
+.wpb-modal .button {
+	min-height: 34px;
+	padding: 0 14px;
+	border: 1px solid var(--wpb-border-strong);
+	border-radius: var(--wpb-radius-sm);
+	background: var(--wpb-surface);
+	box-shadow: var(--wpb-shadow-sm);
+	color: var(--wpb-text);
+	font-size: 13px;
+	font-weight: 500;
+	line-height: 32px;
+	transition: background-color var(--wpb-transition), border-color var(--wpb-transition), color var(--wpb-transition);
+}
+
+.wpb-admin .wrap .button:hover,
+.wpb-admin .wrap .button-secondary:hover,
+.wpb-modal .button:hover {
+	background: var(--wpb-surface-muted);
+	border-color: var(--wpb-border-strong);
+	color: var(--wpb-text);
+}
+
+.wpb-admin .wrap .button:focus,
+.wpb-modal .button:focus {
+	box-shadow: var(--wpb-focus-ring);
+	border-color: var(--wpb-accent);
+	outline: 0;
+}
+
+.wpb-admin .wrap .button-primary,
+.wpb-modal .button-primary {
+	background: var(--wpb-accent);
+	border-color: var(--wpb-accent);
+	color: #fff;
+}
+
+.wpb-admin .wrap .button-primary:hover,
+.wpb-admin .wrap .button-primary:focus,
+.wpb-modal .button-primary:hover,
+.wpb-modal .button-primary:focus {
+	background: var(--wpb-accent-hover);
+	border-color: var(--wpb-accent-hover);
+	color: #fff;
+}
+
+.wpb-admin .wrap .button-small,
+.wpb-modal .button-small {
+	min-height: 28px;
+	padding: 0 10px;
+	font-size: 12px;
+	line-height: 26px;
+}
+
+.wpb-admin .wrap .button-hero {
+	min-height: 44px;
+	padding: 0 22px;
+	font-size: 15px;
+	line-height: 42px;
+}
+
+.wpb-admin .wrap .button.button-link-delete,
+.wpb-admin .wrap .button.wpb-button-danger {
+	color: var(--wpb-error);
+	border-color: var(--wpb-error-border);
+}
+
+.wpb-admin .wrap .button.button-link-delete:hover,
+.wpb-admin .wrap .button.wpb-button-danger:hover {
+	background: var(--wpb-error-bg);
+	border-color: var(--wpb-error);
+	color: var(--wpb-error);
+}
+
+.wpb-admin .wrap .button-link-delete:not(.button),
+.wpb-admin .wrap .wpb-link-danger {
+	color: var(--wpb-error);
+}
+
+.wpb-admin .wrap .button[disabled],
+.wpb-admin .wrap .button.disabled,
+.wpb-admin .wrap .button-primary[disabled],
+.wpb-admin .wrap .button-primary.disabled {
+	opacity: 0.55;
+	box-shadow: none;
+}
+
+.wpb-admin .wrap .button .dashicons {
+	font-size: 16px;
+	width: 16px;
+	height: 16px;
+	vertical-align: -3px;
+	margin-right: 4px;
+}
+
+.wpb-admin .wrap p.submit {
+	margin-top: var(--wpb-space-4);
+	padding-top: 0;
+}
+
+/* ==========================================================================
+   Core layer — notices
+   ========================================================================== */
+
+.wpb-admin .wrap .notice,
+.wpb-admin .wrap div.updated,
+.wpb-admin .wrap div.error {
+	margin: var(--wpb-space-3) 0 var(--wpb-space-4);
+	padding: 10px 14px;
+	border: 1px solid var(--wpb-border);
+	border-left-width: 4px;
+	border-radius: var(--wpb-radius-sm);
+	background: var(--wpb-surface);
+	box-shadow: none;
+}
+
+.wpb-admin .wrap .notice p {
+	margin: 0.25em 0;
+	padding: 0;
+}
+
+.wpb-admin .wrap .notice-success,
+.wpb-admin .wrap div.updated {
+	border-color: var(--wpb-success-border);
+	border-left-color: var(--wpb-success);
+	background: var(--wpb-success-bg);
+}
+
+.wpb-admin .wrap .notice-error,
+.wpb-admin .wrap div.error {
+	border-color: var(--wpb-error-border);
+	border-left-color: var(--wpb-error);
+	background: var(--wpb-error-bg);
+}
+
+.wpb-admin .wrap .notice-warning {
+	border-color: var(--wpb-warning-border);
+	border-left-color: var(--wpb-warning);
+	background: var(--wpb-warning-bg);
+}
+
+.wpb-admin .wrap .notice-info {
+	border-color: var(--wpb-info-border);
+	border-left-color: var(--wpb-info);
+	background: var(--wpb-info-bg);
+}
+
+.wpb-admin .wrap .notice.is-dismissible {
+	padding-right: 38px;
+}
+
+/* ==========================================================================
+   Core layer — tables & boxes
+   ========================================================================== */
+
+.wpb-admin .wrap .widefat {
+	border: 1px solid var(--wpb-border);
+	border-radius: var(--wpb-radius);
+	border-collapse: separate;
+	border-spacing: 0;
+	box-shadow: var(--wpb-shadow-sm);
+	overflow: hidden;
+}
+
+.wpb-admin .wrap .widefat thead th,
+.wpb-admin .wrap .widefat thead td,
+.wpb-admin .wrap .widefat tfoot th,
+.wpb-admin .wrap .widefat tfoot td {
+	background: var(--wpb-surface-muted);
+	border-color: var(--wpb-border);
+	color: var(--wpb-text-muted);
+	font-size: 12px;
+	font-weight: 600;
+	letter-spacing: 0.02em;
+}
+
+.wpb-admin .wrap .widefat td,
+.wpb-admin .wrap .widefat th {
+	padding: 12px 14px;
+}
+
+.wpb-admin .wrap .widefat tbody tr + tr > *,
+.wpb-admin .wrap .wp-list-table tbody tr + tr > * {
+	border-top: 1px solid var(--wpb-border);
+}
+
+.wpb-admin .wrap .widefat.striped > tbody > :nth-child(odd),
+.wpb-admin .wrap .striped > tbody > :nth-child(odd) {
+	background: var(--wpb-surface);
+}
+
+.wpb-admin .wrap .widefat tbody tr:hover {
+	background: var(--wpb-surface-muted);
+}
+
+.wpb-admin .wrap .widefat .check-column {
+	padding-left: 14px;
+}
+
+.wpb-admin .wrap .tablenav {
+	margin: var(--wpb-space-3) 0;
+}
+
+.wpb-admin .wrap .subsubsub {
+	color: var(--wpb-text-subtle);
+}
+
+.wpb-admin .wrap .card,
+.wpb-admin .wrap .postbox {
+	max-width: none;
+	border: 1px solid var(--wpb-border);
+	border-radius: var(--wpb-radius);
+	box-shadow: var(--wpb-shadow-sm);
+}
+
+.wpb-admin .wrap .card {
+	padding: var(--wpb-space-5);
+}
+
+.wpb-admin .wrap .postbox .postbox-header {
+	border-bottom-color: var(--wpb-border);
+}
+
+/* ==========================================================================
+   Component — page header
+   ========================================================================== */
+
+.wpb-header {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--wpb-space-4);
+	margin: var(--wpb-space-2) 0 var(--wpb-space-5);
+}
+
+.wpb-header__brand {
+	display: flex;
+	align-items: center;
+	gap: var(--wpb-space-3);
+	min-width: 0;
+}
+
+.wpb-header__icon {
+	display: inline-flex;
+	flex: 0 0 auto;
+	align-items: center;
+	justify-content: center;
+	width: 40px;
+	height: 40px;
+	border-radius: var(--wpb-radius);
+	background: var(--wpb-accent-soft);
+	color: var(--wpb-accent);
+}
+
+.wpb-header__icon.dashicons,
+.wpb-header__icon .dashicons {
+	font-size: 22px;
+	line-height: 40px;
+	text-align: center;
+}
+
+.wpb-header__icon.dashicons {
+	width: 40px;
+	height: 40px;
+}
+
+.wpb-header__icon img {
+	width: 24px;
+	height: 24px;
+}
+
+.wpb-admin .wrap .wpb-header__title,
+.wpb-header__title {
+	display: flex;
+	align-items: center;
+	gap: var(--wpb-space-2);
+	margin: 0;
+	padding: 0;
+	font-size: 22px;
+	font-weight: 600;
+	line-height: 1.25;
+	letter-spacing: -0.01em;
+	color: var(--wpb-text);
+}
+
+.wpb-header__subtitle {
+	margin: 2px 0 0;
+	color: var(--wpb-text-muted);
+	font-size: 13px;
+}
+
+.wpb-header__actions {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--wpb-space-2);
+}
+
+.wpb-admin .wrap hr.wp-header-end {
+	margin: 0;
+}
+
+/* ==========================================================================
+   Component — card
+   ========================================================================== */
+
+.wpb-card {
+	margin: 0 0 var(--wpb-space-5);
+	border: 1px solid var(--wpb-border);
+	border-radius: var(--wpb-radius);
+	background: var(--wpb-surface);
+	box-shadow: var(--wpb-shadow-sm);
+}
+
+.wpb-card__header {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: var(--wpb-space-3);
+	padding: var(--wpb-space-4) var(--wpb-space-5);
+	border-bottom: 1px solid var(--wpb-border);
+}
+
+.wpb-admin .wrap .wpb-card__title,
+.wpb-card__title {
+	margin: 0;
+	padding: 0;
+	font-size: 15px;
+	font-weight: 600;
+	line-height: 1.4;
+	color: var(--wpb-text);
+}
+
+.wpb-card__description {
+	margin: 2px 0 0;
+	color: var(--wpb-text-muted);
+	font-size: 13px;
+}
+
+.wpb-card__body {
+	padding: var(--wpb-space-5);
+}
+
+.wpb-card__body > :first-child {
+	margin-top: 0;
+}
+
+.wpb-card__body > :last-child {
+	margin-bottom: 0;
+}
+
+.wpb-card__body--flush {
+	padding: 0;
+}
+
+.wpb-card__body--flush .widefat {
+	border: 0;
+	border-radius: 0;
+	box-shadow: none;
+}
+
+.wpb-card__footer {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: flex-end;
+	gap: var(--wpb-space-2);
+	padding: var(--wpb-space-3) var(--wpb-space-5);
+	border-top: 1px solid var(--wpb-border);
+	background: var(--wpb-surface-muted);
+	border-radius: 0 0 var(--wpb-radius) var(--wpb-radius);
+}
+
+.wpb-card--muted {
+	background: var(--wpb-surface-muted);
+	box-shadow: none;
+}
+
+.wpb-card--interactive {
+	transition: border-color var(--wpb-transition), box-shadow var(--wpb-transition);
+}
+
+.wpb-card--interactive:hover {
+	border-color: var(--wpb-border-strong);
+	box-shadow: var(--wpb-shadow);
+}
+
+/* ==========================================================================
+   Component — layout helpers
+   ========================================================================== */
+
+.wpb-grid {
+	display: grid;
+	gap: var(--wpb-space-5);
+	grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+	margin-bottom: var(--wpb-space-5);
+}
+
+.wpb-grid > .wpb-card {
+	margin: 0;
+}
+
+.wpb-grid--2 {
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.wpb-grid--3 {
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.wpb-grid--4 {
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.wpb-grid--sidebar {
+	grid-template-columns: minmax(0, 1fr) 320px;
+	align-items: start;
+}
+
+@media screen and (max-width: 1200px) {
+	.wpb-grid--3,
+	.wpb-grid--4 {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+
+	.wpb-grid--sidebar {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}
+
+@media screen and (max-width: 782px) {
+	.wpb-grid--2,
+	.wpb-grid--3,
+	.wpb-grid--4 {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}
+
+.wpb-stack {
+	display: flex;
+	flex-direction: column;
+	gap: var(--wpb-space-3);
+}
+
+.wpb-row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--wpb-space-2);
+}
+
+.wpb-row--between {
+	justify-content: space-between;
+}
+
+.wpb-toolbar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--wpb-space-2);
+	margin: 0 0 var(--wpb-space-4);
+}
+
+.wpb-toolbar__end {
+	margin-left: auto;
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--wpb-space-2);
+}
+
+.wpb-divider {
+	height: 1px;
+	margin: var(--wpb-space-5) 0;
+	border: 0;
+	background: var(--wpb-border);
+}
+
+.wpb-muted {
+	color: var(--wpb-text-muted);
+}
+
+.wpb-small {
+	font-size: 12px;
+}
+
+.wpb-mono {
+	font-family: var(--wpb-font-mono);
+	font-size: 12px;
+}
+
+.wpb-text-success { color: var(--wpb-success); }
+.wpb-text-warning { color: var(--wpb-warning); }
+.wpb-text-error { color: var(--wpb-error); }
+
+.wpb-visually-hidden {
+	position: absolute !important;
+	width: 1px;
+	height: 1px;
+	margin: -1px;
+	padding: 0;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}
+
+/* ==========================================================================
+   Component — field (stacked label/input, alternative to .form-table)
+   ========================================================================== */
+
+.wpb-field {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	margin: 0 0 var(--wpb-space-4);
+}
+
+.wpb-field:last-child {
+	margin-bottom: 0;
+}
+
+.wpb-field__label {
+	font-weight: 600;
+	color: var(--wpb-text);
+}
+
+.wpb-field__help {
+	margin: 0;
+	color: var(--wpb-text-muted);
+	font-size: 13px;
+}
+
+.wpb-field__control {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--wpb-space-2);
+}
+
+.wpb-field__control > input:not([type="checkbox"]):not([type="radio"]):not(.small-text),
+.wpb-field__control > select,
+.wpb-field__control > textarea {
+	flex: 1 1 240px;
+	max-width: 480px;
+}
+
+.wpb-field__suffix {
+	color: var(--wpb-text-muted);
+}
+
+/* ==========================================================================
+   Component — toggle switch
+   ========================================================================== */
+
+/* Extra specificity beats core's `.form-table td > label:first-child` on mobile. */
+.wpb-admin .wrap .wpb-toggle,
+.wpb-toggle {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	gap: 10px;
+	cursor: pointer;
+	user-select: none;
+}
+
+.wpb-admin .wrap .wpb-toggle input[type="checkbox"],
+.wpb-toggle input[type="checkbox"] {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	min-width: 0;
+	margin: 0;
+	opacity: 0;
+}
+
+.wpb-toggle__track {
+	position: relative;
+	display: inline-block;
+	flex: 0 0 auto;
+	width: 36px;
+	height: 20px;
+	border-radius: var(--wpb-radius-pill);
+	background: var(--wpb-border-strong);
+	transition: background-color var(--wpb-transition);
+}
+
+.wpb-toggle__track::after {
+	content: "";
+	position: absolute;
+	top: 2px;
+	left: 2px;
+	width: 16px;
+	height: 16px;
+	border-radius: 50%;
+	background: #fff;
+	box-shadow: 0 1px 2px rgba(16, 24, 40, 0.2);
+	transition: transform var(--wpb-transition);
+}
+
+.wpb-toggle input:checked + .wpb-toggle__track {
+	background: var(--wpb-accent);
+}
+
+.wpb-toggle input:checked + .wpb-toggle__track::after {
+	transform: translateX(16px);
+}
+
+.wpb-toggle input:focus-visible + .wpb-toggle__track {
+	box-shadow: var(--wpb-focus-ring);
+}
+
+.wpb-toggle input:disabled + .wpb-toggle__track {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+/* ==========================================================================
+   Component — badge
+   ========================================================================== */
+
+.wpb-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 2px 8px;
+	border: 1px solid var(--wpb-border);
+	border-radius: var(--wpb-radius-pill);
+	background: var(--wpb-surface-muted);
+	color: var(--wpb-text-muted);
+	font-size: 12px;
+	font-weight: 500;
+	line-height: 18px;
+	white-space: nowrap;
+	vertical-align: middle;
+}
+
+.wpb-badge--dot::before {
+	content: "";
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	background: currentColor;
+}
+
+.wpb-badge--success {
+	background: var(--wpb-success-bg);
+	border-color: var(--wpb-success-border);
+	color: var(--wpb-success);
+}
+
+.wpb-badge--warning {
+	background: var(--wpb-warning-bg);
+	border-color: var(--wpb-warning-border);
+	color: var(--wpb-warning);
+}
+
+.wpb-badge--error {
+	background: var(--wpb-error-bg);
+	border-color: var(--wpb-error-border);
+	color: var(--wpb-error);
+}
+
+.wpb-badge--info {
+	background: var(--wpb-info-bg);
+	border-color: var(--wpb-info-border);
+	color: var(--wpb-info);
+}
+
+.wpb-badge--accent {
+	background: var(--wpb-accent-soft);
+	border-color: transparent;
+	color: var(--wpb-accent);
+}
+
+/* ==========================================================================
+   Component — alert (inline message inside content, not moved by WP)
+   ========================================================================== */
+
+.wpb-alert {
+	display: flex;
+	align-items: flex-start;
+	gap: 10px;
+	margin: 0 0 var(--wpb-space-4);
+	padding: var(--wpb-space-3) 14px;
+	border: 1px solid var(--wpb-info-border);
+	border-radius: var(--wpb-radius-sm);
+	background: var(--wpb-info-bg);
+	color: var(--wpb-text);
+}
+
+.wpb-alert > .dashicons {
+	flex: 0 0 auto;
+	color: var(--wpb-info);
+}
+
+.wpb-alert__body {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+.wpb-alert__body p {
+	margin: 0;
+}
+
+.wpb-alert__body > :first-child { margin-top: 0; }
+.wpb-alert__body > :last-child { margin-bottom: 0; }
+
+.wpb-alert__title {
+	display: block;
+	margin-bottom: 2px;
+	font-weight: 600;
+}
+
+.wpb-alert__dismiss {
+	flex: 0 0 auto;
+	padding: 0;
+	border: 0;
+	background: none;
+	color: var(--wpb-text-muted);
+	cursor: pointer;
+}
+
+.wpb-alert--success { background: var(--wpb-success-bg); border-color: var(--wpb-success-border); }
+.wpb-alert--success > .dashicons { color: var(--wpb-success); }
+.wpb-alert--warning { background: var(--wpb-warning-bg); border-color: var(--wpb-warning-border); }
+.wpb-alert--warning > .dashicons { color: var(--wpb-warning); }
+.wpb-alert--error { background: var(--wpb-error-bg); border-color: var(--wpb-error-border); }
+.wpb-alert--error > .dashicons { color: var(--wpb-error); }
+
+/* ==========================================================================
+   Component — stat
+   ========================================================================== */
+
+.wpb-stat {
+	padding: var(--wpb-space-4) var(--wpb-space-5);
+	border: 1px solid var(--wpb-border);
+	border-radius: var(--wpb-radius);
+	background: var(--wpb-surface);
+	box-shadow: var(--wpb-shadow-sm);
+}
+
+.wpb-stat__label {
+	margin: 0;
+	color: var(--wpb-text-muted);
+	font-size: 13px;
+	font-weight: 500;
+}
+
+.wpb-stat__value {
+	margin: 4px 0 0;
+	color: var(--wpb-text);
+	font-size: 26px;
+	font-weight: 600;
+	line-height: 1.2;
+	letter-spacing: -0.02em;
+	font-variant-numeric: tabular-nums;
+}
+
+.wpb-stat__meta {
+	margin: 4px 0 0;
+	color: var(--wpb-text-muted);
+	font-size: 12px;
+}
+
+/* ==========================================================================
+   Component — key/value list
+   ========================================================================== */
+
+.wpb-kv {
+	display: grid;
+	grid-template-columns: minmax(120px, max-content) 1fr;
+	gap: var(--wpb-space-2) var(--wpb-space-5);
+	margin: 0;
+}
+
+.wpb-kv dt {
+	color: var(--wpb-text-muted);
+	font-weight: 500;
+}
+
+.wpb-kv dd {
+	margin: 0;
+	color: var(--wpb-text);
+	word-break: break-word;
+}
+
+/* ==========================================================================
+   Component — code block
+   ========================================================================== */
+
+.wpb-code {
+	margin: 0;
+	padding: var(--wpb-space-3) var(--wpb-space-4);
+	max-height: 480px;
+	overflow: auto;
+	border: 1px solid var(--wpb-border);
+	border-radius: var(--wpb-radius-sm);
+	background: var(--wpb-surface-muted);
+	color: var(--wpb-text);
+	font-family: var(--wpb-font-mono);
+	font-size: 12px;
+	line-height: 1.6;
+	white-space: pre-wrap;
+	word-break: break-word;
+}
+
+/* ==========================================================================
+   Component — empty state
+   ========================================================================== */
+
+.wpb-empty {
+	padding: var(--wpb-space-6) var(--wpb-space-5);
+	text-align: center;
+	color: var(--wpb-text-muted);
+}
+
+.wpb-empty .dashicons {
+	width: 40px;
+	height: 40px;
+	font-size: 40px;
+	color: var(--wpb-border-strong);
+}
+
+.wpb-empty__title {
+	margin: var(--wpb-space-2) 0 4px;
+	color: var(--wpb-text);
+	font-size: 15px;
+	font-weight: 600;
+}
+
+.wpb-empty p {
+	margin: 0 auto var(--wpb-space-4);
+	max-width: 420px;
+}
+
+/* ==========================================================================
+   Component — spinner & busy overlay
+   ========================================================================== */
+
+.wpb-spinner {
+	display: inline-block;
+	width: 16px;
+	height: 16px;
+	border: 2px solid var(--wpb-border-strong);
+	border-top-color: var(--wpb-accent);
+	border-radius: 50%;
+	vertical-align: middle;
+	animation: wpb-spin 0.7s linear infinite;
+}
+
+.wpb-spinner--lg {
+	width: 28px;
+	height: 28px;
+	border-width: 3px;
+}
+
+.is-loading {
+	position: relative;
+	pointer-events: none;
+}
+
+.button.is-loading {
+	color: transparent !important;
+}
+
+.button.is-loading::after {
+	content: "";
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	width: 14px;
+	height: 14px;
+	margin: -9px 0 0 -9px;
+	border: 2px solid currentColor;
+	border-color: var(--wpb-text-muted) var(--wpb-text-muted) var(--wpb-text-muted) transparent;
+	border-radius: 50%;
+	animation: wpb-spin 0.7s linear infinite;
+}
+
+.button-primary.is-loading::after {
+	border-color: #fff #fff #fff transparent;
+}
+
+.wpb-busy {
+	position: absolute;
+	inset: 0;
+	z-index: 10;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: var(--wpb-space-3);
+	border-radius: inherit;
+	background: rgba(255, 255, 255, 0.85);
+	color: var(--wpb-text-muted);
+	text-align: center;
+}
+
+.wpb-busy[hidden] {
+	display: none;
+}
+
+@keyframes wpb-spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+/* ==========================================================================
+   Component — progress
+   ========================================================================== */
+
+.wpb-progress {
+	height: 6px;
+	overflow: hidden;
+	border-radius: var(--wpb-radius-pill);
+	background: var(--wpb-border);
+}
+
+.wpb-progress__bar {
+	height: 100%;
+	border-radius: inherit;
+	background: var(--wpb-accent);
+	transition: width 200ms ease;
+}
+
+/* ==========================================================================
+   Component — modal (native <dialog>)
+   ========================================================================== */
+
+.wpb-modal {
+	width: min(640px, calc(100vw - 32px));
+	max-height: calc(100vh - 64px);
+	padding: 0;
+	border: 1px solid var(--wpb-border);
+	border-radius: var(--wpb-radius-lg);
+	background: var(--wpb-surface);
+	box-shadow: var(--wpb-shadow-lg);
+	color: var(--wpb-text);
+	font-family: var(--wpb-font);
+}
+
+.wpb-modal[open] {
+	display: flex;
+	flex-direction: column;
+}
+
+.wpb-modal--wide {
+	width: min(960px, calc(100vw - 32px));
+}
+
+.wpb-modal::backdrop {
+	background: rgba(16, 24, 40, 0.45);
+}
+
+.wpb-modal__header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: var(--wpb-space-3);
+	padding: var(--wpb-space-4) var(--wpb-space-5);
+	border-bottom: 1px solid var(--wpb-border);
+}
+
+.wpb-modal__title {
+	margin: 0;
+	font-size: 16px;
+	font-weight: 600;
+}
+
+.wpb-modal__close {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 32px;
+	height: 32px;
+	padding: 0;
+	border: 0;
+	border-radius: var(--wpb-radius-sm);
+	background: none;
+	color: var(--wpb-text-muted);
+	cursor: pointer;
+}
+
+.wpb-modal__close:hover {
+	background: var(--wpb-surface-muted);
+	color: var(--wpb-text);
+}
+
+.wpb-modal__close:focus-visible {
+	box-shadow: var(--wpb-focus-ring);
+	outline: 0;
+}
+
+.wpb-modal__body {
+	flex: 1 1 auto;
+	padding: var(--wpb-space-5);
+	overflow: auto;
+}
+
+.wpb-modal__footer {
+	display: flex;
+	justify-content: flex-end;
+	gap: var(--wpb-space-2);
+	padding: var(--wpb-space-3) var(--wpb-space-5);
+	border-top: 1px solid var(--wpb-border);
+	background: var(--wpb-surface-muted);
+}
+
+/* ==========================================================================
+   Component — toast
+   ========================================================================== */
+
+.wpb-toasts {
+	position: fixed;
+	right: 24px;
+	bottom: 24px;
+	z-index: 100000;
+	display: flex;
+	flex-direction: column;
+	gap: var(--wpb-space-2);
+	max-width: min(380px, calc(100vw - 48px));
+	pointer-events: none;
+}
+
+.wpb-toast {
+	display: flex;
+	align-items: flex-start;
+	gap: 10px;
+	padding: var(--wpb-space-3) 14px;
+	border: 1px solid var(--wpb-border);
+	border-left: 4px solid var(--wpb-info);
+	border-radius: var(--wpb-radius-sm);
+	background: var(--wpb-surface);
+	box-shadow: var(--wpb-shadow-lg);
+	color: var(--wpb-text);
+	font-size: 13px;
+	pointer-events: auto;
+	animation: wpb-toast-in 160ms ease-out;
+}
+
+.wpb-toast--success { border-left-color: var(--wpb-success); }
+.wpb-toast--warning { border-left-color: var(--wpb-warning); }
+.wpb-toast--error { border-left-color: var(--wpb-error); }
+
+.wpb-toast.is-leaving {
+	opacity: 0;
+	transform: translateY(6px);
+	transition: opacity 160ms ease, transform 160ms ease;
+}
+
+@keyframes wpb-toast-in {
+	from {
+		opacity: 0;
+		transform: translateY(6px);
+	}
+}
+
+/* ==========================================================================
+   Component — sticky save bar
+   ========================================================================== */
+
+.wpb-savebar {
+	position: sticky;
+	bottom: 0;
+	z-index: 5;
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: var(--wpb-space-3);
+	margin: var(--wpb-space-5) 0 0;
+	padding: var(--wpb-space-3) 0;
+	border-top: 1px solid var(--wpb-border);
+	background: var(--wpb-bg);
+}
+
+.wpb-admin .wrap .wpb-savebar p.submit {
+	margin: 0;
+	padding: 0;
+}
+
+/* ==========================================================================
+   Reduced motion
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+	.wpb-spinner,
+	.button.is-loading::after {
+		animation-duration: 1.6s;
+	}
+
+	.wpb-toast,
+	.wpb-toggle__track,
+	.wpb-toggle__track::after {
+		animation: none;
+		transition: none;
+	}
+}

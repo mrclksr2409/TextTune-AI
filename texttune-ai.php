@@ -3,7 +3,7 @@
  * Plugin Name: TextTune AI
  * Plugin URI:  https://github.com/mrclksr2409/TextTune-AI
  * Description: KI-gestützte Textoptimierung direkt im WordPress Block-Editor und Classic Editor. Unterstützt OpenAI und Anthropic.
- * Version:     1.0.5
+ * Version:     1.1.0
  * Author:      Marcel Kaiser
  * Text Domain: texttune-ai
  * Domain Path: /languages
@@ -55,7 +55,7 @@ if ( version_compare( PHP_VERSION, '7.4', '<' ) ) {
 }
 
 if ( ! defined( 'TEXTTUNE_VERSION' ) ) {
-    define( 'TEXTTUNE_VERSION', '1.0.5' );
+    define( 'TEXTTUNE_VERSION', '1.1.0' );
 }
 if ( ! defined( 'TEXTTUNE_PLUGIN_DIR' ) ) {
     define( 'TEXTTUNE_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
@@ -73,6 +73,15 @@ if ( file_exists( $texttune_puc_path ) ) {
     require_once $texttune_puc_path;
 }
 unset( $texttune_puc_path );
+
+// Load the shared admin design system WP-Backend UI (bundled in lib/). Must be
+// required at top level: the loader negotiates the newest bundled copy across
+// all plugins on plugins_loaded.
+$texttune_wpb_path = TEXTTUNE_PLUGIN_DIR . 'lib/wp-backend-ui/wp-backend-ui.php';
+if ( file_exists( $texttune_wpb_path ) ) {
+    require_once $texttune_wpb_path;
+}
+unset( $texttune_wpb_path );
 
 // Include classes — wrapped so a missing/broken include surfaces in the error log
 // instead of a bare fatal without context.

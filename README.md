@@ -23,6 +23,11 @@ KI-gestützte Textoptimierung direkt im WordPress-Editor. Optimiere deine Beitr�
 - PHP **7.4** oder höher
 - Ein API-Key von **OpenAI** oder **Anthropic**
 
+Mitgelieferte Bibliotheken (in `lib/`, keine separate Installation nötig):
+
+- **[Plugin Update Checker](https://github.com/YahnisElsts/plugin-update-checker)** — Updates direkt aus GitHub
+- **WP-Backend UI 1.0.2** — gemeinsames Admin-Designsystem aller Plugins (Seitenkopf, Tabs, Formulare, Buttons). Liefern mehrere Plugins eine Kopie mit, wird automatisch die neueste geladen.
+
 ---
 
 ## Installation
@@ -280,7 +285,10 @@ TextTune-AI/
 │   │   ├── texttune-classic-editor.js   # Classic Editor-Integration
 │   │   └── texttune-admin.js            # Einstellungsseite JS
 │   └── css/
-│       └── texttune-admin.css           # Einstellungsseite Styles
+│       └── texttune-media.css           # Mediathek-Integration Styles
+├── lib/
+│   ├── plugin-update-checker/           # Updates über GitHub (gebündelt)
+│   └── wp-backend-ui/                   # Admin-Designsystem WP-Backend UI (gebündelt, nicht ändern)
 └── languages/                           # Übersetzungsdateien
 ```
 
@@ -291,6 +299,12 @@ TextTune-AI/
 GPL-2.0-or-later — [Lizenztext](https://www.gnu.org/licenses/gpl-2.0.html)
 
 ## Changelog
+
+### 1.1.0 — 2026-10-09
+- Changed: unified admin design — the settings page now uses the bundled shared design system WP-Backend UI 1.0.2 (`lib/wp-backend-ui/`): page header with icon and version, modern tabs, settings rendered as cards, restyled inputs and buttons.
+- Changed: tab switching (Einstellungen / Prompts / Bilderkennung) and the API key reveal button are handled by WP-Backend UI (`data-wpb-tabs`, `data-wpb-reveal`); after saving, the page still returns to the active tab.
+- Changed: media library styles use the shared `--wpb-*` design tokens with the previous WordPress colors as fallback.
+- Removed: `assets/css/texttune-admin.css` (fully covered by WP-Backend UI).
 
 ### 1.0.5 — 2026-10-03
 - Changed: updates now come straight from the `main` branch; GitHub releases and tags are ignored.
