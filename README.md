@@ -14,6 +14,7 @@ KI-gestützte Textoptimierung direkt im WordPress-Editor. Optimiere deine Beitr�
 - **Verschlüsselte API-Keys** — AES-256-CBC Verschlüsselung in der Datenbank
 - **Gutenberg + Classic Editor** — Funktioniert in beiden Editoren
 - **Undo-Support** — Änderungen lassen sich mit Strg+Z / Cmd+Z rückgängig machen
+- **Beta-Updates** — Optional Updates vom Branch `beta` statt `main` beziehen (Einstellungen → Updates)
 
 ---
 
@@ -299,6 +300,10 @@ TextTune-AI/
 GPL-2.0-or-later — [Lizenztext](https://www.gnu.org/licenses/gpl-2.0.html)
 
 ## Changelog
+
+### 1.2.0 — 2026-10-09
+- Added: beta update channel — new option *Einstellungen → Updates → Beta-Updates*. When enabled, the updater loads updates from the `beta` branch instead of `main`.
+- Changed: switching the update channel clears the cached update state, so the next update check uses the selected branch immediately.
 
 ### 1.1.0 — 2026-10-09
 - Changed: unified admin design — the settings page now uses the bundled shared design system WP-Backend UI 1.0.2 (`lib/wp-backend-ui/`): page header with icon and version, modern tabs, settings rendered as cards, restyled inputs and buttons.

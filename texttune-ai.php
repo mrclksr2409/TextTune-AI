@@ -3,7 +3,7 @@
  * Plugin Name: TextTune AI
  * Plugin URI:  https://github.com/mrclksr2409/TextTune-AI
  * Description: KI-gestützte Textoptimierung direkt im WordPress Block-Editor und Classic Editor. Unterstützt OpenAI und Anthropic.
- * Version:     1.1.0
+ * Version:     1.2.0
  * Author:      Marcel Kaiser
  * Text Domain: texttune-ai
  * Domain Path: /languages
@@ -55,7 +55,7 @@ if ( version_compare( PHP_VERSION, '7.4', '<' ) ) {
 }
 
 if ( ! defined( 'TEXTTUNE_VERSION' ) ) {
-    define( 'TEXTTUNE_VERSION', '1.1.0' );
+    define( 'TEXTTUNE_VERSION', '1.2.0' );
 }
 if ( ! defined( 'TEXTTUNE_PLUGIN_DIR' ) ) {
     define( 'TEXTTUNE_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
@@ -155,8 +155,10 @@ function texttune_ai_init() {
                 __FILE__,
                 'texttune-ai'
             );
-            // Updates come straight from the main branch (version from the plugin header).
-            $update_checker->setBranch( 'main' );
+            // Updates come straight from the branch HEAD (version from the plugin header):
+            // "beta" when beta updates are enabled in the settings, otherwise "main".
+            $update_settings = get_option( 'texttune_ai_settings', array() );
+            $update_checker->setBranch( ! empty( $update_settings['beta_updates'] ) ? 'beta' : 'main' );
             // Ignore GitHub releases and tags so only the branch HEAD is used.
             add_filter(
                 $update_checker->getUniqueName( 'vcs_update_detection_strategies' ),

@@ -189,6 +189,22 @@ class TextTune_Settings {
             'texttune_provider_section'
         );
 
+        // Updates section (Settings tab).
+        add_settings_section(
+            'texttune_updates_section',
+            __( 'Updates', 'texttune-ai' ),
+            array( $this, 'render_updates_section' ),
+            'texttune-ai-settings'
+        );
+
+        add_settings_field(
+            'texttune_beta_updates',
+            __( 'Beta-Updates', 'texttune-ai' ),
+            array( $this, 'render_beta_updates_field' ),
+            'texttune-ai-settings',
+            'texttune_updates_section'
+        );
+
         // Prompts section (Prompts tab).
         add_settings_section(
             'texttune_prompts_section',
@@ -352,6 +368,14 @@ class TextTune_Settings {
         }
         $sanitized['vision']['max_edge'] = $max_edge;
 
+        // Beta updates — switching the update channel drops the cached update
+        // state so the next check reads the version from the other branch.
+        $sanitized['beta_updates'] = ! empty( $input['beta_updates'] );
+        if ( $sanitized['beta_updates'] !== ! empty( $current_settings['beta_updates'] ) ) {
+            delete_site_option( 'external_updates-texttune-ai' );
+            delete_site_transient( 'update_plugins' );
+        }
+
         // A new key or a provider switch invalidates the cached model list;
         // flushing after validation is fine — the just-rendered form was
         // built from the old list, the next page load fetches with the new
@@ -438,6 +462,30 @@ class TextTune_Settings {
      */
     public function render_provider_section() {
         echo '<p>' . esc_html__( 'Wähle den KI-Provider und gib deinen API-Schlüssel ein.', 'texttune-ai' ) . '</p>';
+    }
+
+    /**
+     * Render updates section description.
+     */
+    public function render_updates_section() {
+        echo '<p>' . esc_html__( 'Updates werden direkt aus GitHub geladen.', 'texttune-ai' ) . '</p>';
+    }
+
+    /**
+     * Render the beta updates checkbox.
+     */
+    public function render_beta_updates_field() {
+        $settings = get_option( 'texttune_ai_settings', array() );
+        $enabled  = ! empty( $settings['beta_updates'] );
+        ?>
+        <label>
+            <input type="checkbox" name="texttune_ai_settings[beta_updates]" value="1" <?php checked( $enabled ); ?> />
+            <?php esc_html_e( 'Beta-Versionen installieren (Branch „beta“ statt „main“)', 'texttune-ai' ); ?>
+        </label>
+        <p class="description">
+            <?php esc_html_e( 'Beta-Versionen enthalten neue Funktionen vor dem offiziellen Release und können Fehler enthalten. Nach dem Zurückschalten auf stabile Updates wird erst wieder aktualisiert, sobald die Version auf „main“ höher ist als die installierte Beta.', 'texttune-ai' ); ?>
+        </p>
+        <?php
     }
 
     /**
