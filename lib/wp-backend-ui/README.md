@@ -217,6 +217,8 @@ Because the newest copy wins, updating one plugin updates the look of all plugin
 
 ### 1.0.2 – 2026-10-09
 - Settings section headings get consistent spacing inside nested containers such as tab panels.
+- Forms and settings tables inside cards no longer add extra space at the top and bottom of the card body.
+- Header action buttons no longer overlap the "Screen Options" tab on list-table screens.
 
 ### 1.0.1 – 2026-10-09
 - Center the page content column on registered screens, with symmetric gutters on all screen sizes.

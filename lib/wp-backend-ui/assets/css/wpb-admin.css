@@ -291,6 +291,29 @@ body.wpb-admin,
 	padding-right: 0;
 }
 
+/* No double spacing at the edges of a card body. */
+.wpb-admin .wrap .wpb-card .form-table tr:first-child > th {
+	padding-top: 4px;
+}
+
+.wpb-admin .wrap .wpb-card .form-table tr:first-child > td {
+	padding-top: 0;
+}
+
+.wpb-admin .wrap .wpb-card .form-table tr:last-child > * {
+	padding-bottom: 0;
+}
+
+.wpb-card__body form > :first-child {
+	margin-top: 0;
+}
+
+.wpb-card__body form > :last-child,
+.wpb-admin .wrap .wpb-card__body p.submit:last-child {
+	margin-bottom: 0;
+	padding-bottom: 0;
+}
+
 @media screen and (max-width: 782px) {
 	.wpb-admin .wrap .form-table th {
 		width: auto;
@@ -690,6 +713,25 @@ textarea.wpb-input {
 	flex-wrap: wrap;
 	align-items: center;
 	gap: var(--wpb-space-2);
+}
+
+/*
+ * Take the floated "Screen Options"/"Help" tabs out of the flow so the header
+ * keeps its full width, and move header actions below them.
+ */
+.wpb-admin #wpbody-content {
+	position: relative;
+}
+
+/* No `top`: the static position keeps the tabs below the opened #screen-meta panel. */
+.wpb-admin #screen-meta-links {
+	position: absolute;
+	right: 0;
+	z-index: 2;
+}
+
+.wpb-admin #screen-meta-links ~ .wrap .wpb-header__actions {
+	margin-top: 40px;
 }
 
 .wpb-admin .wrap hr.wp-header-end {
