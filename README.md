@@ -301,6 +301,10 @@ GPL-2.0-or-later — [Lizenztext](https://www.gnu.org/licenses/gpl-2.0.html)
 
 ## Changelog
 
+### 1.2.1 — 2026-10-10
+- Added: "Wiki" link in the plugin row on the Plugins screen.
+- Changed: Author URI points to the GitHub profile.
+
 ### 1.2.0 — 2026-10-09
 - Added: beta update channel — new option *Einstellungen → Updates → Beta-Updates*. When enabled, the updater loads updates from the `beta` branch instead of `main`.
 - Changed: switching the update channel clears the cached update state, so the next update check uses the selected branch immediately.

@@ -3,7 +3,7 @@
  * Plugin Name: TextTune AI
  * Plugin URI:  https://github.com/mrclksr2409/TextTune-AI
  * Description: KI-gestützte Textoptimierung direkt im WordPress Block-Editor und Classic Editor. Unterstützt OpenAI und Anthropic.
- * Version:     1.2.0
+ * Version:     1.2.1
  * Author:      Marcel Kaiser
  * Author URI:  https://github.com/mrclksr2409
  * Text Domain: texttune-ai
@@ -56,7 +56,7 @@ if ( version_compare( PHP_VERSION, '7.4', '<' ) ) {
 }
 
 if ( ! defined( 'TEXTTUNE_VERSION' ) ) {
-    define( 'TEXTTUNE_VERSION', '1.2.0' );
+    define( 'TEXTTUNE_VERSION', '1.2.1' );
 }
 if ( ! defined( 'TEXTTUNE_PLUGIN_DIR' ) ) {
     define( 'TEXTTUNE_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
