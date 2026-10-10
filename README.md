@@ -2,6 +2,8 @@
 
 KI-gestützte Textoptimierung direkt im WordPress-Editor. Optimiere deine Beiträge mit einem Klick — unterstützt **OpenAI** und **Anthropic**.
 
+**Ausführliche Dokumentation:** [TextTune AI Wiki](https://github.com/mrclksr2409/TextTune-AI/wiki)
+
 ---
 
 ## Funktionen

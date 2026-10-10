@@ -1,0 +1,1 @@
+TextTune AI · [Repository](https://github.com/mrclksr2409/TextTune-AI) · [Issues](https://github.com/mrclksr2409/TextTune-AI/issues) — Diese Seiten werden aus dem Ordner `wiki/` im Repository erzeugt. Änderungen bitte dort vornehmen.

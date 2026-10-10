@@ -1,0 +1,51 @@
+name: Wiki sync
+
+# Mirrors the wiki/ folder into the GitHub wiki. The folder is the source of
+# truth: edits made directly in the wiki are overwritten on the next sync.
+#
+# One-time setup: enable the wiki (Settings → Features → Wikis) and create any
+# first page in the web UI - the wiki's git repository only exists after that.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'wiki/**'
+      - '.github/workflows/wiki-sync.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: wiki-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Clone wiki
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git clone --depth 1 "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.wiki.git" wiki-repo \
+            || { echo "::error::Wiki repository not found. Enable the wiki and create a first page once in the web UI."; exit 1; }
+
+      - name: Copy pages
+        run: rsync -a --delete --exclude '.git' wiki/ wiki-repo/
+
+      - name: Commit and push
+        working-directory: wiki-repo
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Wiki already up to date."
+            exit 0
+          fi
+          git commit -m "Sync wiki from ${GITHUB_SHA::7}"
+          git push origin HEAD
